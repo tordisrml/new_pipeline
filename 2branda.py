@@ -58,7 +58,7 @@ longgebv = '../results/ending.txt'          #from BHB
 accyield = '../results/accuracy.sol' #From programs by JHE
 accscs = '../results/accuracy_f.sol' #From programs by JHE
 #Radnrkodifile
-radnrkodifile = '../dmu_data/radnrkodi' #Created by prepprod.f
+radnrkodifile = '../dmu_data/radnrkodi' #Created by prep_tdm.f
 #Name of pedigree file
 pedigreefile = info.loc[1,'info']
 #Scaling year, present year - 5 years
@@ -130,7 +130,7 @@ solcolumns = ['1_code_effect', #2 for fixed and 4 for genetic
     '9']   #Solution from the second but last DMU5
 sol_widths = [1,3,3,4,12,12,12,20,20]
 
-#Format of radnrkodi file created by prepprod.f
+#Format of radnrkodi file created by prep_tdm.f
 radnrkodi_columns = ['id','code_id','stada','norec','fix1','fix2', 'fix3','sex']
 widths_radnrkodi = [15,9,3,3,6,6,6,2]
 

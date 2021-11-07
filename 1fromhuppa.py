@@ -25,7 +25,7 @@ info = pd.read_csv(
 #Info for program
 #---------------------------------------------------------------------------
 #Radnrkodifile
-radnrkodifile = '../dmu_data/radnrkodi' #Created by prepprod.f
+radnrkodifile = '../dmu_data/radnrkodi' #Created by prep_tdm.f
 
 
 #Date of the fertility-data collection from Huppa!
@@ -72,7 +72,7 @@ confobs_columns = ['code_id','HdomsY','lact','AGEc_1',
 
 rankorderobs_columns = ['code_id', 'year', 'mjaltarod', 'gaedarod']
 
-#Format of radnrkodi file created by prepprod.f
+#Format of radnrkodi file created by prep_tdm.f
 radnrkodi_columns = ['id','code_id','stada','norec','fix1','fix2', 'fix3','sex']
 widths_radnrkodi = [15,9,3,3,6,6,6,2]
 
