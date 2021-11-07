@@ -17,7 +17,7 @@ rankorderdmu = 1
 #---------------------------------------------------------------------------
 #File with information for program!
 info = pd.read_csv(
-    '/home/thordis/kynbotamat/info',
+    'info',
     header=None,
     names=['info']
     )
