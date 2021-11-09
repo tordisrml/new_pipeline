@@ -17,3 +17,12 @@ Conformation - In-file -- line 16 --
 -
 Rank order - In-file -- line 19 --
 ../from_huppa/Mjaltaathugun_26464.txt
+-
+Year and month of breeding value estimation
+2022jan
+-
+Name of final file to read into Huppa
+../results/branda.20212202
+-
+-
+VERY IMPORTART THERE ARE NO EMTY ROWS

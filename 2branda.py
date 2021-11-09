@@ -5,12 +5,14 @@
 
 import pandas as pd
 import numpy as np
+import os
+import shutil
 
 #Option to read SOL files for these 3 traits and collect results, 0 means skip
 # and 1 means SOL files will be read
-fertility_results = 1
-conf_results = 1
-rankorder_results = 1
+fertility_results = 0
+conf_results = 0
+rankorder_results = 0
 #Option to write scaled results for above traits to seperate files to be read
 #later, 0 means skip and 1 means seperate result files will be written to disc
 seperate_files = 0
@@ -22,10 +24,12 @@ seperate_files = 0
     #trait straight from the program itself.
 #Program always collects results for yield, scs, persistancy and longevity from
     #imported datafiles.
-collectresults = 1    #0 means don't, 1 means collect
+collectresults = 0    #0 means don't, 1 means collect
 
 #Option to write large datafile to disc
-branda = 1
+branda = 0
+
+collectdmufiles = 1
 
 #---------------------------------------------------------------------------
 #File with information for program!
@@ -37,7 +41,9 @@ info = pd.read_csv(
 #---------------------------------------------------------------------------
 #Info for program
 #---------------------------------------------------------------------------
-brandafile = '../results/branda.20212202'
+yearmonth = info.loc[21,'info']
+
+brandafile = info.loc[24,'info']
 #DMU sol files
 fertilitysolfile = '../DMU/fertilityDMU/SOL'
 rankordersolfile = '../DMU/rankorderDMU/SOL'
@@ -292,9 +298,10 @@ def countingoff (df0,trait,traitcount, df1):
 #-------------------------------------------------------------
 #-------------------------------------------------------------
 #Reading in id codes to replace in SOL files
-radnrkodi = readingfile(radnrkodifile,radnrkodi_columns,widths_radnrkodi)
-radnrkodi = radnrkodi.drop(
-    ['stada','norec','fix1','fix2', 'fix3','sex'], axis = 1)
+if fertility_results == 1 | conf_results == 1 | rankorder_results == 1 :
+    radnrkodi = readingfile(radnrkodifile,radnrkodi_columns,widths_radnrkodi)
+    radnrkodi = radnrkodi.drop(
+        ['stada','norec','fix1','fix2', 'fix3','sex'], axis = 1)
 
 #Reading fertilty SOL file, collecting and scaling results and counting daughters
 #Write results to disc if option above set to 1
@@ -591,8 +598,40 @@ if collectresults == 1:
         %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
         %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s')
 
-print(branda.iloc[500000:500015])
-print(branda.info())
+        print(branda.iloc[500000:500015])
+        print(branda.info())
+
+if collectdmufiles == 1:
+    #---------------------------------------------------------------------------
+    #This function that collects dmu1 and dmu5 files into one directory
+    #---------------------------------------------------------------------------
+    def collectfiles(trait,year):
+        path = f'../DMU/{year}/dmufiles' #creation of dir dmufiles
+        isExist = os.path.exists(path) #first program checks if dir already exits
+        if not isExist:
+            os.makedirs(path);
+            print(f'{path} is created!')
+        else:
+            print(f'{path} exists!')
+
+        path = f'../DMU/{year}/dmufiles/dmu1_{trait}' #copies dmu1 from trait file
+        isExist = os.path.exists(path)                #and renames with trait
+        if not isExist:                               #checks if file exists already
+            shutil.copy(f'../DMU/{year}/{trait}/dmu1', path)
+            print(f'{path} is created!')
+        else:
+            print(f'{path} exists!')
+
+        path = f'../DMU/{year}/dmufiles/dmu5_{trait}' #same as above, dmu5 files copied
+        isExist = os.path.exists(path)
+        if not isExist:
+            shutil.copy(f'../DMU/{year}/{trait}/dmu5', path)
+            print(f'{path} is created!')
+        else:
+            print(f'{path} exists!')
 
 
+    collectfiles('fertility',yearmonth)
+    collectfiles('conformation',yearmonth)
+    collectfiles('rankorder',yearmonth)
 #

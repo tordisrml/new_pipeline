@@ -8,12 +8,15 @@
 import pandas as pd
 import numpy as np
 import datetime
+import os
+import shutil
 
 #Option to create observations files for DMU, 0 means skip and 1 means create
-fertilitydmu = 1
-confdmu = 1
-rankorderdmu = 1
+fertilitydmu = 0
+confdmu = 0
+rankorderdmu = 0
 
+prepfordmu = 1
 #---------------------------------------------------------------------------
 #File with information for program!
 info = pd.read_csv(
@@ -27,6 +30,7 @@ info = pd.read_csv(
 #Radnrkodifile
 radnrkodifile = '../dmu_data/radnrkodi' #Created by prep_tdm.f
 
+yearmonth = info.loc[21,'info']
 
 #Date of the fertility-data collection from Huppa!
 collectiondate = pd.to_datetime(info.loc[12,'info'], format='%Y%m%d')
@@ -172,13 +176,12 @@ def hy_grouping(element, df, col, group, df1):
 #---------------------------------------------------------------------------
 #---------------------------------------------------------------------------
 
-
 #-------------------------------------------------------------
 #Reading in ranrkodi to replace IDs with code ids, radnrkodi is created by preppod.f
-radnrkodi = readingfilefwf(radnrkodifile,radnrkodi_columns,widths_radnrkodi)
-radnrkodi = radnrkodi.drop(
-    ['stada','norec','fix1','fix2', 'fix3','sex'], axis = 1)
-
+if fertilitydmu == 1 | confdmu == 1 | rankorderdmu == 1 :
+    radnrkodi = readingfilefwf(radnrkodifile,radnrkodi_columns,widths_radnrkodi)
+    radnrkodi = radnrkodi.drop(
+        ['stada','norec','fix1','fix2', 'fix3','sex'], axis = 1)
 
 #---------------------------------------------------------------------------
 #Start of fertility program
@@ -644,8 +647,9 @@ if fertilitydmu == 1:
 else:
     print( f'DMU fertility file not created' )
 
-
-
+#---------------------------------------------------------------------------
+#Start of conformation  program
+#---------------------------------------------------------------------------
 if confdmu == 1:
 
     df = readingfilefwf(conformationfile,conformationfile_columns,widths_conformationfile)
@@ -750,7 +754,6 @@ if confdmu == 1:
 else:
     print( f'DMU conformation file not created' )
 
-
 #---------------------------------------------------------------------------
 #Start of rank order program
 #---------------------------------------------------------------------------
@@ -789,5 +792,48 @@ if rankorderdmu == 1:
 
 else:
     print( f'DMU rank order file not created' )
+
+
+if prepfordmu == 1:
+    #---------------------------------------------------------------------------
+    #This function creates a directory for current DMU run
+    #---------------------------------------------------------------------------
+    def prep(trait,year):
+        path = f'../DMU/{year}/{trait}' #creation of a dir for year.month of BV estimation
+        isExist = os.path.exists(path) #checks first if dir already exists
+        if not isExist:
+            os.makedirs(path);
+            print(f'{path} is created!')
+        else:
+            print(f'{path} exists!')
+
+        dirpath = f'../DMU/{year}/{trait}/dir' #copies dir files from dir folder to trait folder
+        isExist = os.path.exists(dirpath)
+        if not isExist:
+            shutil.copy(f'../DMU/dir_files/{trait}_dir', dirpath)
+            print(f'{dirpath} is created!')
+        else:
+            print(f'{dirpath} exists!')
+
+        path = f'../DMU/{year}/{trait}/dmu1.sh' #copies dmu1.sh trait folder
+        isExist = os.path.exists(path)
+        if not isExist:
+            shutil.copy(f'../DMU/dmu1.sh', f'../DMU/{year}/{trait}')
+            print(f'{path} is created!')
+        else:
+            print(f'{path} exists!')
+
+        path = f'../DMU/{year}/{trait}/dmu5.sh' #copies dmu5.sh trait folder
+        isExist = os.path.exists(path)
+        if not isExist:
+            shutil.copy(f'../DMU/dmu5.sh', f'../DMU/{year}/{trait}')
+            print(f'{path} is created!')
+        else:
+            print(f'{path} exists!')
+
+    #yearmonth variable is read from info file
+    prep('fertility',yearmonth)
+    prep('conformation',yearmonth)
+    prep('rankorder',yearmonth)
 
 #
