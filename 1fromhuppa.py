@@ -11,12 +11,18 @@ import datetime
 import os
 import shutil
 
+#user defined functions used by program from kynbotamat_module.py
+from kynbotamat_module import readfilecsv
+from kynbotamat_module import readingfilefwf
+from kynbotamat_module import hy_grouping
+
 #Option to create observations files for DMU, 0 means skip and 1 means create
 fertilitydmu = 0
 confdmu = 0
 rankorderdmu = 0
 
 prepfordmu = 1
+
 #---------------------------------------------------------------------------
 #File with information for program!
 info = pd.read_csv(
@@ -27,10 +33,13 @@ info = pd.read_csv(
 #---------------------------------------------------------------------------
 #Info for program
 #---------------------------------------------------------------------------
+yearmonth = info.loc[21,'info']  #year and month of breeding value estamation
+
 #Radnrkodifile
 radnrkodifile = '../dmu_data/radnrkodi' #Created by prep_tdm.f
-
-yearmonth = info.loc[21,'info']
+#Format of radnrkodi file created by prep_tdm.f
+radnrkodi_columns = ['id','code_id','stada','norec','fix1','fix2', 'fix3','sex']
+widths_radnrkodi = [15,9,3,3,6,6,6,2]
 
 #Date of the fertility-data collection from Huppa!
 collectiondate = pd.to_datetime(info.loc[12,'info'], format='%Y%m%d')
@@ -38,76 +47,42 @@ collectiondate = pd.to_datetime(info.loc[12,'info'], format='%Y%m%d')
 #Insemination file from Huppa for fertility
 #Datafile 1, info about inseminations. One line for every ins.
 insfile = info.loc[8,'info']
+insfile_columns = ['id','ins','tech','comment','lact']
 #Cow file from Huppa for fertility
 cowfile = info.loc[10,'info']
-#Conformation file from Huppa
-conformationfile = info.loc[15,'info']
-#Rank order file from Huppa
-rankorderfile = info.loc[18,'info']
-
-#Observationfile used for DMU created by this program
-fertilityobs = '../dmu_data/dmu_fertility.txt'
-confobs = '../dmu_data/dmu_conformation.txt'
-rankorderobs = '../dmu_data/dmu_rankorder.txt'
-
-
-insfile_columns = ['id','ins','tech','comment','lact']
 cowfile_columns = ['id','herd','birth','death','calv1','calv2','calv3','calv4']
 
+#Conformation file from Huppa
+conformationfile = info.loc[15,'info']
 conformationfile_columns=['id','domsdagur','birth','calv1','calv2','unused',
 'staerd','boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahalli', 'malabratti',
 'stada_haekla_hlid', 'stada_haekla_aftan', 'klaufhalli', 'jugurjafnvaegi', 'jugurfesta',
-'jugurband', 'jugurdypt', 'spenagerd', 'spenalengd', 'spenaþykkt', 'spenastada', 'spenaoddur',
+'jugurband', 'jugurdypt', 'spenagerd', 'spenalengd', 'spenathykkt', 'spenastada', 'spenaoddur',
 'mjaltir', 'skap', 'aukaspenar', 'haed','herd']
 widths_conformationfile = [15,8,8,8,8,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,7]
 
+#Rank order file from Huppa
+rankorderfile = info.loc[18,'info']
 rankorderfile_columns=['instring']
 widths_rankorderfile = [38]
 
+#---------------------------------------------------------------------------
+#Observationfiles used for DMU created by this program
+fertilityobs = '../dmu_data/dmu_fertility.txt'
 fertilityobs_columns = ['code_id','HBY','HC1','HC2','HC3','IYM0','IYM1','IYM2',
     'IYM3','AGEi_h','AGEc_1','AGEc_2','AGEc_3','tech_h',
     'CRh','ICF1','ICF2','ICF3','IFL1','IFL2','IFL3']
 
+confobs = '../dmu_data/dmu_conformation.txt'
 confobs_columns = ['code_id','HdomsY','lact','AGEc_1',
     'boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahalli', 'malabratti',
     'stada_haekla_hlid', 'stada_haekla_aftan', 'klaufhalli', 'jugurfesta',
-    'jugurband', 'jugurdypt', 'spenalengd', 'spenaþykkt', 'spenastada',
+    'jugurband', 'jugurdypt', 'spenalengd', 'spenathykkt', 'spenastada',
     'mjaltir', 'skap']
 
+rankorderobs = '../dmu_data/dmu_rankorder.txt'
 rankorderobs_columns = ['code_id', 'year', 'mjaltarod', 'gaedarod']
-
-#Format of radnrkodi file created by prep_tdm.f
-radnrkodi_columns = ['id','code_id','stada','norec','fix1','fix2', 'fix3','sex']
-widths_radnrkodi = [15,9,3,3,6,6,6,2]
-
-def readfilecsv(file, columns, sepr):
-    print( f'-------------------------------------------' )
-    print( f'Reading {file} file .....' )
-    print( f'-------------------------------------------' )
-    df = pd.read_csv(
-        file,
-        header=None,
-        sep=sepr,
-        names=columns)
-    return df
-
 #---------------------------------------------------------------------------
-#Function to read fixed with files
-#---------------------------------------------------------------------------
-def readingfilefwf(file,columns,filewidths):
-    print( f'----------------------------------------' )
-    print( f'Reading the {file} file.....' )
-    print( f'----------------------------------------' )
-    widths = filewidths
-    df = pd.read_fwf(
-        file,
-        header=None,
-        widths=widths,
-        names=columns)
-    print( f'-------------------------------------------' )
-    print( f'Reading the the {file} file finished.....' )
-    print( f'-------------------------------------------' )
-    return df
 
 #---------------------------------------------------------------------------
 #Function to check if there are values in certain columns, used in fertility
@@ -119,66 +94,11 @@ def check(df,trait1,trait2,trait3,trait4,heifer,first,second,third,newcolumn, ou
         (df[trait4].notnull().astype(int) == third)
         ,newcolumn] = outcome
         return df[newcolumn]
-
-#---------------------------------------------------------------------------
-#This is a function to create herd x year group fixed effect
-#If cows are fewer than 3 in a group the function tries to combine with group
-#above or below WITHIN SAME HERD
-#---------------------------------------------------------------------------
-def hy_grouping(element, df, col, group, df1):
-    tdf = []
-    for herd, data in df.groupby( element ):
-        # get counts and assign initial groups
-        counts = data[ col ].value_counts().sort_index().to_frame()
-        counts[ 'group' ] = range( counts.shape[ 0 ] )
-
-        while True:
-            gcounts = counts.groupby( 'group' ).sum()[ col ]  # group counts
-            change = gcounts[ gcounts.values < 4 ]  # groups with too few
-
-            if change.shape[ 0 ] == 0:
-                # no changes, exit
-                break
-
-            # check how to merge groups
-            cgroup = change.index.min()
-            groups = gcounts.index.values
-            g_ind = list( groups ).index( cgroup )
-            if ( g_ind + 1 ) < groups.shape[ 0 ]:
-                # merge forward
-                ngroup = groups[ g_ind + 1 ]
-
-            elif g_ind > 0:
-                # merge backward
-                ngroup = groups[ g_ind - 1 ]
-
-            else:
-                # no groups to merge
-                print( f'Can not merge herd {herd}' )
-                break
-
-            counts.loc[ counts[ 'group' ] == cgroup, 'group' ] = ngroup
-
-        # assign groups
-        for ind, gdata in counts.iterrows():
-            data.loc[ data[ col ] == ind, 'group' ] = gdata[ 'group' ]
-
-        tdf.append( data )
-
-    tdf = pd.concat( tdf )
-    #Creation of fixed effect herd + yeargroup
-    tdf[ group ] = tdf[ element ].astype( 'str' ) + tdf[ 'group' ].astype( int ).astype( str )
-    #Merged into main dataframe
-    df1 = pd.merge(left=df1, right=tdf[['id', group]], on='id',
-        how='outer').fillna(0, downcast='infer')
-
-    return df1
-#---------------------------------------------------------------------------
 #---------------------------------------------------------------------------
 
 #-------------------------------------------------------------
-#Reading in ranrkodi to replace IDs with code ids, radnrkodi is created by preppod.f
-if fertilitydmu == 1 | confdmu == 1 | rankorderdmu == 1 :
+#Reading in ranrkodi to replace IDs with code ids, radnrkodi is created by preptdm.f
+if (fertilitydmu == 1) | (confdmu == 1) | (rankorderdmu == 1) :
     radnrkodi = readingfilefwf(radnrkodifile,radnrkodi_columns,widths_radnrkodi)
     radnrkodi = radnrkodi.drop(
         ['stada','norec','fix1','fix2', 'fix3','sex'], axis = 1)
@@ -679,7 +599,7 @@ if confdmu == 1:
                 (df['jugurband'] != 0) &
                 (df['jugurdypt'] != 0) &
                 (df['spenalengd'] != 0) &
-                (df['spenaþykkt'] != 0) &
+                (df['spenathykkt'] != 0) &
                 (df['spenastada'] != 0) &
                 (df['mjaltir'] != 0) &
                 (df['skap'] != 0) &
@@ -735,7 +655,6 @@ if confdmu == 1:
     #Delete rows that are alone in a group
     df = df[(df['HdomsYc'] > 2) ]
 
-    # data_use = pd.merge(left=data_use, right=code_df, on='id', how='left')
     df = pd.merge(left=df, right=radnrkodi[['id','code_id']], on='id', how='left')
     df = df.sort_values(by=['code_id'])
     df = df[df['code_id'].notnull().astype(int) == 1]
@@ -835,5 +754,6 @@ if prepfordmu == 1:
     prep('fertility',yearmonth)
     prep('conformation',yearmonth)
     prep('rankorder',yearmonth)
+
 
 #

@@ -7,6 +7,15 @@ import pandas as pd
 import numpy as np
 import os
 import shutil
+from matplotlib import pyplot as plt
+import seaborn as sns
+import statsmodels.formula.api as sm
+#user defined functions used by program from kynbotamat_module.py
+from kynbotamat_module import readfilecsv
+from kynbotamat_module import readingfilefwf
+from kynbotamat_module import countingoff
+from kynbotamat_module import plottingmean
+from kynbotamat_module import plottingmeansns
 
 #Option to read SOL files for these 3 traits and collect results, 0 means skip
 # and 1 means SOL files will be read
@@ -15,7 +24,7 @@ conf_results = 0
 rankorder_results = 0
 #Option to write scaled results for above traits to seperate files to be read
 #later, 0 means skip and 1 means seperate result files will be written to disc
-seperate_files = 0
+seperate_files = 1
 
 #Option to collect results for a large datafile to be read by Huppa.
 #--IF ABOVE OPTIONS ARE SET TO 0 --> program will collect results for these three
@@ -24,13 +33,16 @@ seperate_files = 0
     #trait straight from the program itself.
 #Program always collects results for yield, scs, persistancy and longevity from
     #imported datafiles.
-collectresults = 0    #0 means don't, 1 means collect
+collectresults = 1    #0 means don't, 1 means collect
 
 #Option to write large datafile to disc
-branda = 0
+writebranda = 1
 
-collectdmufiles = 1
+collectdmufiles = 0
 
+phantomcollection = 0
+
+plotting = 1
 #---------------------------------------------------------------------------
 #File with information for program!
 info = pd.read_csv(
@@ -42,16 +54,61 @@ info = pd.read_csv(
 #Info for program
 #---------------------------------------------------------------------------
 yearmonth = info.loc[21,'info']
-
 brandafile = info.loc[24,'info']
+#Scaling year, present year - 5 years
+scalingyear = pd.to_numeric(info.loc[3,'info'])
+#Scaling objects
+imean = pd.to_numeric(info.loc[4,'info'])
+isd = pd.to_numeric(info.loc[5,'info'])
+#---------------------------------------------------------------------------
+#Radnrkodifile
+radnrkodifile = '../dmu_data/radnrkodi' #Created by prep_tdm.f
+#Format of radnrkodi file created by prep_tdm.f
+radnrkodi_columns = ['id','code_id','stada','norec','fix1','fix2', 'fix3','sex']
+widths_radnrkodi = [15,9,3,3,6,6,6,2]
+#---------------------------------------------------------------------------
+#Name of pedigree file
+pedigreefile = info.loc[1,'info']
+#Format of pedigree file from Huppa
+ped_columns = ['id','dam','sire','unused','sex','unused2', 'bullno', 'name', 'farm']
+ped_widths = [15,15,15,12,1,2,5,20,20]
+#---------------------------------------------------------------------------
+
 #DMU sol files
 fertilitysolfile = '../DMU/fertilityDMU/SOL'
 rankordersolfile = '../DMU/rankorderDMU/SOL'
 confsolfile = '../DMU/conformationDMU/SOL'
-#Observationfile used for DMU
+#Format of SOL files
+solcolumns = ['1_code_effect', #2 for fixed and 4 for genetic
+    '2_trait_no',   # lact 1, 2 or 3
+    '3','4',
+    'code_id',   #fixed effects and id's
+    '6_no_obs',  #No. of observations in this class
+    '7',
+    '8_BLUP',  #Estimate/prediction
+    '9']   #Solution from the second but last DMU5
+sol_widths = [1,3,3,4,12,12,12,20,20]
+#---------------------------------------------------------------------------
+
+#Observationfiles used for DMU
+#---------------------------------------------------------------------------
+#---------------------------------------------------------------------------
 fertilityobs = '../dmu_data/dmu_fertility.txt'
-rankorderobs = '../dmu_data/dmu_rankorder.txt'
+fertility_columns = ['code_id','HBY','HC1','HC2','HC3','IYM0','IYM1','IYM2',
+    'IYM3','AGEi_h','AGEc_1','AGEc_2','AGEc_3','tech_h',
+    'CR0','ICF1','ICF2','ICF3','IFL1','IFL2','IFL3']
+#---------------------------------------------------------------------------
 confobs = '../dmu_data/dmu_conformation.txt'
+conf_columns = ['code_id','HdomsY','lact','AGEc_1',
+    'boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahalli', 'malabratti',
+    'stada_haekla_hlid', 'stada_haekla_aftan', 'klaufhalli', 'jugurfesta',
+    'jugurband', 'jugurdypt', 'spenalengd', 'spenathykkt', 'spenastada',
+    'mjaltir', 'skap']
+#---------------------------------------------------------------------------
+rankorderobs = '../dmu_data/dmu_rankorder.txt'
+rankorder_columns = ['code_id', 'year', 'mjaltarod', 'gaedarod']
+#---------------------------------------------------------------------------
+
 #Seperate EBV result files
 tdmebv = '../results/tdmebv.txt'    #From programs by JHE
 scsebv = '../results/scsebv.txt'    #From programs by JHE
@@ -63,37 +120,14 @@ longgebv = '../results/ending.txt'          #from BHB
 #Accuracy files for yield and scs
 accyield = '../results/accuracy.sol' #From programs by JHE
 accscs = '../results/accuracy_f.sol' #From programs by JHE
-#Radnrkodifile
-radnrkodifile = '../dmu_data/radnrkodi' #Created by prep_tdm.f
-#Name of pedigree file
-pedigreefile = info.loc[1,'info']
-#Scaling year, present year - 5 years
-scalingyear = pd.to_numeric(info.loc[3,'info'])
-#Scaling objects
-imean = pd.to_numeric(info.loc[4,'info'])
-isd = pd.to_numeric(info.loc[5,'info'])
 
 #---------------------------------------------------------------------------
-#Columns in DMU files/own observation files
-fertility_columns = ['code_id','HBY','HC1','HC2','HC3','IYM0','IYM1','IYM2',
-    'IYM3','AGEi_h','AGEc_1','AGEc_2','AGEc_3','tech_h',
-    'CR0','ICF1','ICF2','ICF3','IFL1','IFL2','IFL3']
-conf_columns = ['code_id','HdomsY','lact','AGEc_1',
-    'boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahalli', 'malabratti',
-    'stada_haekla_hlid', 'stada_haekla_aftan', 'klaufhalli', 'jugurfesta',
-    'jugurband', 'jugurdypt', 'spenalengd', 'spenaþykkt', 'spenastada',
-    'mjaltir', 'skap']
-rankorder_columns = ['code_id', 'year', 'mjaltarod', 'gaedarod']
-#---------------------------------------------------------------------------
-
 #Columns in EBV files
 #---------------------------------------------------------------------------
 #Fixed with files
-tdmebv_columns = ['id','milk_kg1','milk_kg2','milk_kg3',
-    'fat_kg1','fat_kg2','fat_kg3',
-    'prot_kg1','prot_kg2','prot_kg3',
-    'fat_%1','fat_%2','fat_%3',
-    'prot_%1','prot_%2','prot_%3','eigin_afurdir', 'yieldtotal']
+tdmebv_columns = ['id','my1','my2','my3','fy1','fy2','fy3',
+    'py1','py2','py3','fp1','fp2','fp3',
+    'pp1','pp2','pp3','eigin_afurdir', 'yieldtotal']
 widths_tdmebv = [15,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4]
 
 scsebv_columns = ['id','scs1','scs2','scs3','scs']
@@ -111,7 +145,6 @@ widths_accyield = [15,8,8]
 accscs_columns =  ['id','no_daughters_SCS', 'SCS_acc']
 widths_accscs = [15,8,8]
 #---------------------------------------------------------------------------
-
 #Space seperated files/dataframes
 #(Created by this program if option above set to 1)
 fertilityebv_columns = ['id','fer_lact1','fer_lact2','fer_lact3','CR0','ICF',
@@ -119,78 +152,72 @@ fertilityebv_columns = ['id','fer_lact1','fer_lact2','fer_lact3','CR0','ICF',
 
 confebv_columns = ['id','boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahalli', 'malabratti',
     'stada_haekla_hlid', 'stada_haekla_aftan', 'klaufhalli', 'jugurfesta',
-    'jugurband', 'jugurdypt', 'spenalengd', 'spenaþykkt', 'spenastada',
+    'jugurband', 'jugurdypt', 'spenalengd', 'spenathykkt', 'spenastada',
     'mjaltir', 'skap','offconf']
 
 rankorderebv_columns = ['id','mjaltarod', 'gaedarod','offrankorder']
 
+
+#Phantom group parent results
+fertilityebvphg = '../results/fertilityebvphg.txt' #written by this program if option above set to 1
+confebvphg = '../results/conformationebvphg.txt' #written by this program if option above set to 1
+rankorderebvphg = '../results/rankorderebvphg.txt' #written by this program if option above set to 1
 #---------------------------------------------------------------------------
-#Format of SOL files
-solcolumns = ['1_code_effect', #2 for fixed and 4 for genetic
-    '2_trait_no',   # lact 1, 2 or 3
-    '3','4',
-    'code_id',   #fixed effects and id's
-    '6_no_obs',  #No. of observations in this class
-    '7',
-    '8_BLUP',  #Estimate/prediction
-    '9']   #Solution from the second but last DMU5
-sol_widths = [1,3,3,4,12,12,12,20,20]
 
-#Format of radnrkodi file created by prep_tdm.f
-radnrkodi_columns = ['id','code_id','stada','norec','fix1','fix2', 'fix3','sex']
-widths_radnrkodi = [15,9,3,3,6,6,6,2]
+#Large file with all solutions scaled
+brandafile_columns = ['id',                                             #1
+        'my1','my2','my3','fy1','fy2','fy3', #6
+        'py1','py2','py3','fp1','fp2','fp3',    #6
+        'pp1','pp2','pp3','scs1','scs2','scs3',             #6
+        'milkper', 'fatper', 'protper',                                 #3
+        'fer_lact1','fer_lact2','fer_lact3','CR0','ICF','IFL',          #6
+        'boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahalli', 'malabratti', #6
+        'stada_haekla_hlid', 'stada_haekla_aftan', 'klaufhalli', 'jugurfesta', #4
+        'jugurband', 'jugurdypt', 'spenalengd', 'spenathykkt', 'spenastada',  #5
+        'mjaltir', 'skap','mjaltarod', 'gaedarod','longevity',              #5
+        'myt','fyt','pyt','fpt','ppt',                 #5
+        'yieldtotal','fertility','scs','jugur','spenar','mjaltir_t','skap2', #7
+        'total',                                                             #1
+        'no_daughters_yield', 'yield_acc', 'no_daughters_SCS', 'SCS_acc', #4
+        'offconf','offrankorder','offCR0','offICF1','offICF2','offICF3', #6
+        'no_daughters_longevity'                                        #1
+        ] #72 columns
+widths_branda = [15,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4, #31
+    4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4] #41
+#---------------------------------------------------------------------------
 
-#Format of pedigree file from Huppa
-ped_columns = ['id','dam','sire','unused','sex','unused2', 'bullno', 'name', 'farm']
-ped_widths = [15,15,15,12,1,2,5,20,20]
 
 #---------------------------------------------------------------------------
 #---------------------------------------------------------------------------
 #Functions used by program!
 #---------------------------------------------------------------------------
-#---------------------------------------------------------------------------
-#Function to read sol files
-#---------------------------------------------------------------------------
-def readingfile(file,columns,filewidths):
-    print( f'----------------------------------------' )
-    print( f'Reading the {file} file.....' )
-    print( f'----------------------------------------' )
-    widths = filewidths
-    df = pd.read_fwf(
-        file,
-        header=None,
-        widths=widths,
-        names=columns)
-    print( f'-------------------------------------------' )
-    print( f'Reading the the {file} file finished.....' )
-    print( f'-------------------------------------------' )
-    return df
-#---------------------------------------------------------------------------
-#Function to collect phantom group results
-def phantomsol(sol):
-    solp = sol[(sol['1_code_effect'] == 4) & (sol['code_id'] < 0)]
-    return solp
 
 #---------------------------------------------------------------------------
+#Function to seperate solutions in SOL file and merging with radnrkodi
+def solread(df):
+    print( f'----------------------------------------' )
+    print( f'Merging sol file with radnrkodi .....' )
+    print( f'----------------------------------------' )
+    #Only keep genetic effectss
+    solp = df[(df['1_code_effect'] == 4) & (df['code_id'] < 0)]
+    sol = df[(df['1_code_effect'] == 4) & (df['code_id'] > 0)] #collect animal results
+    # merge real ids back into results
+    sol= pd.merge(left=sol[
+        ['code_id','2_trait_no', '6_no_obs','8_BLUP']
+        ], right=radnrkodi[['id','code_id']], on='code_id', how='left')
+    return sol, solp
 #Function to find solution for each trait in sol dataframes and merge them by ids
 #into a new df
 def solutions(df, df1, no, trait, id):
     print( f'----------------------------------------' )
     print( f'Collecting results for {trait} .....' )
     print( f'----------------------------------------' )
-    #Only keep genetic effectss
-    sol = df[(df['1_code_effect'] == 4) & (df['code_id'] > 0)] #collect animal results
-    # merge real ids back into results
-    sol= pd.merge(left=sol[
-        ['code_id','2_trait_no', '6_no_obs','8_BLUP']
-        ], right=radnrkodi[['id','code_id']], on='code_id', how='left')
-
-    dftrait = sol.loc[sol['2_trait_no'] == no ] #one dataframe per trait
+    dftrait = df.loc[df['2_trait_no'] == no ] #one dataframe per trait
     dftrait.loc[:,trait] = dftrait['8_BLUP']            #name the trait
     df1 = pd.merge(left=df1, right=dftrait[[id,trait]  #merge into large dataframe
         ], on=id)
-    df1 = df1.drop_duplicates(subset=['id'])
-    df1 = df1.sort_values(by=['id'])
+    df1 = df1.drop_duplicates(subset=[id])
+    df1 = df1.sort_values(by=[id])
     return df1
 #---------------------------------------------------------------------------
 
@@ -279,46 +306,36 @@ def combineresultsdf(df, df2,columns):
     df = df.sort_values(by=['id'])
     return df
 
-#Function to count how many daughters have observations for each lactation
-def countingoff (df0,trait,traitcount, df1):
-    print( f'-------------------------------------------' )
-    print( f'Counting offpspring for {trait} .....' )
-    print( f'-------------------------------------------' )
-    df = df0.loc[(df0[trait] >= 0)]
-    #Counting offspring for this trait
-    df.loc[:,traitcount] = df.groupby('sire')['sire'].transform('count') #Counting offspring for this trait
-    df = df[['sire', traitcount]]
-    df = df.drop_duplicates(subset=['sire'])
-    df.columns = ['id', traitcount]
-    df1 = pd.merge(left=df1, right=df[['id',traitcount]], on='id', how='outer').fillna(0, downcast='infer')
-    return df1
+
 #-------------------------------------------------------------
 #-------------------------------------------------------------
 #START OF PROGRAM!!!
 #-------------------------------------------------------------
 #-------------------------------------------------------------
 #Reading in id codes to replace in SOL files
-if fertility_results == 1 | conf_results == 1 | rankorder_results == 1 :
-    radnrkodi = readingfile(radnrkodifile,radnrkodi_columns,widths_radnrkodi)
+if (collectresults == 1) | (fertility_results == 1) | (conf_results == 1) | (rankorder_results == 1) :
+    radnrkodi = readingfilefwf(radnrkodifile,radnrkodi_columns,widths_radnrkodi)
     radnrkodi = radnrkodi.drop(
         ['stada','norec','fix1','fix2', 'fix3','sex'], axis = 1)
+    #Reading pedigree
+    ped = readingfilefwf(pedigreefile,ped_columns,ped_widths)
 
 #Reading fertilty SOL file, collecting and scaling results and counting daughters
 #Write results to disc if option above set to 1
 if fertility_results == 1:
     #Reading sol files
-    fertilitysol = readingfile(fertilitysolfile,solcolumns,sol_widths)
-    #Phantom group results
-    fertilityph = phantomsol(fertilitysol)
+    fertilitysol = readingfilefwf(fertilitysolfile,solcolumns,sol_widths)
+    #Sepererating phantom groups from known animals in SOL file and merging real id's
+    fertilitysolids, fertilitysolph = solread(fertilitysol)
     #Seperating solutions by traits
     fertilitydf = radnrkodi['id'].copy()  #Creating a dataframe to merge trait results
-    fertilitydf = solutions(fertilitysol, fertilitydf, 1, 'CR0','id')
-    fertilitydf = solutions(fertilitysol, fertilitydf, 1, 'ICF1','id')
-    fertilitydf = solutions(fertilitysol, fertilitydf, 1, 'ICF2','id')
-    fertilitydf = solutions(fertilitysol, fertilitydf, 1, 'ICF3','id')
-    fertilitydf = solutions(fertilitysol, fertilitydf, 1, 'IFL1','id')
-    fertilitydf = solutions(fertilitysol, fertilitydf, 1, 'IFL2','id')
-    fertilitydf = solutions(fertilitysol, fertilitydf, 1, 'IFL3','id')
+    fertilitydf = solutions(fertilitysolids, fertilitydf, 1, 'CR0','id')
+    fertilitydf = solutions(fertilitysolids, fertilitydf, 2, 'ICF1','id')
+    fertilitydf = solutions(fertilitysolids, fertilitydf, 3, 'ICF2','id')
+    fertilitydf = solutions(fertilitysolids, fertilitydf, 4, 'ICF3','id')
+    fertilitydf = solutions(fertilitysolids, fertilitydf, 5, 'IFL1','id')
+    fertilitydf = solutions(fertilitysolids, fertilitydf, 6, 'IFL2','id')
+    fertilitydf = solutions(fertilitysolids, fertilitydf, 7, 'IFL3','id')
     #Reading own observations files
     ownobs_fertility = ownobs(fertilityobs,fertility_columns)
     #Creating average groups to scale
@@ -347,14 +364,19 @@ if fertility_results == 1:
         fertilitydf['IFL'] * 0.5 )
 
     #Counting daughters with own obs
-    #Reading pedigree
-    ped = readingfile(pedigreefile,ped_columns,ped_widths)
     ownobs_fertility = pd.merge(left=ownobs_fertility, right=ped[['id','sire']], on='id', how='left')
 
     fertilitydf = countingoff(ownobs_fertility,'CR0','offCR0', fertilitydf)
     fertilitydf = countingoff(ownobs_fertility,'ICF1','offICF1', fertilitydf)
     fertilitydf = countingoff(ownobs_fertility,'ICF2','offICF2', fertilitydf)
     fertilitydf = countingoff(ownobs_fertility,'ICF3','offICF3', fertilitydf)
+
+    fertilitydf = fertilitydf.loc[(fertilitydf['id'] > 190000000000000) & (
+        fertilitydf['id'] < 250000000000000)]
+    #Only cows allowed with id
+    fertilitydf = fertilitydf.loc[(fertilitydf['id'] > 0)]#------------------------------------------------------------------------------------
+    #ID changed to integer
+    fertilitydf['id'] = fertilitydf['id'].astype(int) #------------------------------------------------------------------------------------
 
     if seperate_files == 1:
         print('Fertility results written to seperate file')
@@ -364,35 +386,62 @@ if fertility_results == 1:
         print(fertilitydf.info())
         print(f'Fertility results written to {fertilityebv}')
 
+    if phantomcollection == 1:
+
+        fertilityphgdf = fertilitysolph['code_id'].copy()
+        fertilityphgdf = solutions(fertilitysolph, fertilityphgdf, 1, 'CR0','code_id')
+        fertilityphgdf = solutions(fertilitysolph, fertilityphgdf, 2, 'ICF1','code_id')
+        fertilityphgdf = solutions(fertilitysolph, fertilityphgdf, 3, 'ICF2','code_id')
+        fertilityphgdf = solutions(fertilitysolph, fertilityphgdf, 4, 'ICF3','code_id')
+        fertilityphgdf = solutions(fertilitysolph, fertilityphgdf, 5, 'IFL1','code_id')
+        fertilityphgdf = solutions(fertilitysolph, fertilityphgdf, 6, 'IFL2','code_id')
+        fertilityphgdf = solutions(fertilitysolph, fertilityphgdf, 7, 'IFL3','code_id')
+        fertilityphgdf['CR0'] = scaling(fertilityphgdf,'CR0',1, fertility_ave)
+        fertilityphgdf['ICF1'] = scaling(fertilityphgdf,'ICF1',-1, fertility_ave)
+        fertilityphgdf['ICF2'] = scaling(fertilityphgdf,'ICF2',-1, fertility_ave)
+        fertilityphgdf['ICF3'] = scaling(fertilityphgdf,'ICF3',-1, fertility_ave)
+        fertilityphgdf['IFL1'] = scaling(fertilityphgdf,'IFL1',-1, fertility_ave)
+        fertilityphgdf['IFL2'] = scaling(fertilityphgdf,'IFL2',-1, fertility_ave)
+        fertilityphgdf['IFL3'] = scaling(fertilityphgdf,'IFL3',-1, fertility_ave)
+        print('Phantom group results collected for fertility')
+        print(fertilityphgdf.iloc[0:51])
+        print(fertilityphgdf.info())
+        if seperate_files == 1:
+            print('PHG conformation results written to seperate file')
+            fertilityphgdf.to_csv(fertilityebvphg, index=False, header=False, sep=' ')
+            print(f'PHG conformation results written to {fertilityebvphg}')
+    else:
+        print('Phantom group results collected for fertility not collected')
 else:
     print('Fertility results not collected')
 
 #Reading conformation SOL file, collecting and scaling results and counting daughters
 #Write results to disc if option above set to 1
 if conf_results == 1:
+
     #Reading sol files
-    confsol = readingfile(confsolfile,solcolumns,sol_widths)
-    #Phantom group results
-    confph = phantomsol(confsol)
+    confsol = readingfilefwf(confsolfile,solcolumns,sol_widths)
+    #Sepererating phantom groups from known animals in SOL file and merging real id's
+    confsolids, confsolph = solread(confsol)
     #Seperating solutions by traits
     confdf = radnrkodi['id'].copy()  #Creating a dataframe to merge trait results
-    confdf = solutions(confsol, confdf, 1, 'boldypt','id')
-    confdf = solutions(confsol, confdf, 2, 'utlogur','id')
-    confdf = solutions(confsol, confdf, 3, 'yfirlina','id')
-    confdf = solutions(confsol, confdf, 4, 'malabreidd','id')
-    confdf = solutions(confsol, confdf, 5, 'malahalli','id')
-    confdf = solutions(confsol, confdf, 6, 'malabratti','id')
-    confdf = solutions(confsol, confdf, 7, 'stada_haekla_hlid','id')
-    confdf = solutions(confsol, confdf, 8, 'stada_haekla_aftan','id')
-    confdf = solutions(confsol, confdf, 9, 'klaufhalli','id')
-    confdf = solutions(confsol, confdf, 10, 'jugurfesta','id')
-    confdf = solutions(confsol, confdf, 11, 'jugurband','id')
-    confdf = solutions(confsol, confdf, 12, 'jugurdypt','id')
-    confdf = solutions(confsol, confdf, 13, 'spenalengd','id')
-    confdf = solutions(confsol, confdf, 14, 'spenaþykkt','id')
-    confdf = solutions(confsol, confdf, 15, 'spenastada','id')
-    confdf = solutions(confsol, confdf, 16, 'mjaltir','id')
-    confdf = solutions(confsol, confdf, 17, 'skap','id')
+    confdf = solutions(confsolids, confdf, 1, 'boldypt','id')
+    confdf = solutions(confsolids, confdf, 2, 'utlogur','id')
+    confdf = solutions(confsolids, confdf, 3, 'yfirlina','id')
+    confdf = solutions(confsolids, confdf, 4, 'malabreidd','id')
+    confdf = solutions(confsolids, confdf, 5, 'malahalli','id')
+    confdf = solutions(confsolids, confdf, 6, 'malabratti','id')
+    confdf = solutions(confsolids, confdf, 7, 'stada_haekla_hlid','id')
+    confdf = solutions(confsolids, confdf, 8, 'stada_haekla_aftan','id')
+    confdf = solutions(confsolids, confdf, 9, 'klaufhalli','id')
+    confdf = solutions(confsolids, confdf, 10, 'jugurfesta','id')
+    confdf = solutions(confsolids, confdf, 11, 'jugurband','id')
+    confdf = solutions(confsolids, confdf, 12, 'jugurdypt','id')
+    confdf = solutions(confsolids, confdf, 13, 'spenalengd','id')
+    confdf = solutions(confsolids, confdf, 14, 'spenathykkt','id')
+    confdf = solutions(confsolids, confdf, 15, 'spenastada','id')
+    confdf = solutions(confsolids, confdf, 16, 'mjaltir','id')
+    confdf = solutions(confsolids, confdf, 17, 'skap','id')
     #Reading own observations files
     ownobs_conf = ownobs(confobs,conf_columns)
     #Creating average groups to scale
@@ -411,14 +460,12 @@ if conf_results == 1:
     confdf['jugurband'] = scaling(confdf,'jugurband',1, conf_ave)
     confdf['jugurdypt'] = scaling(confdf,'jugurdypt',1, conf_ave)
     confdf['spenalengd'] = scaling(confdf,'spenalengd',1, conf_ave)
-    confdf['spenaþykkt'] = scaling(confdf,'spenaþykkt',1, conf_ave)
+    confdf['spenathykkt'] = scaling(confdf,'spenathykkt',1, conf_ave)
     confdf['spenastada'] = scaling(confdf,'spenastada',1, conf_ave)
     confdf['mjaltir'] = scaling(confdf,'mjaltir',1, conf_ave)
     confdf['skap'] = scaling(confdf,'skap',1, conf_ave)
 
     #Counting daughters with own obs
-    #Reading pedigree
-    ped = readingfile(pedigreefile,ped_columns,ped_widths)
     ownobs_conf = pd.merge(left=ownobs_conf, right=ped[['id','sire']], on='id', how='left')
 
     confdf = countingoff(ownobs_conf,'boldypt','offconf', confdf)
@@ -431,21 +478,68 @@ if conf_results == 1:
 
         print(confdf.iloc[50000:50015])
         print(confdf.info())
+
+    if phantomcollection == 1:
+
+        confphgdf = confsolph['code_id'].copy()
+        confphgdf = solutions(confsolph, confphgdf, 1, 'boldypt','code_id')
+        confphgdf = solutions(confsolph, confphgdf, 2, 'utlogur','code_id')
+        confphgdf = solutions(confsolph, confphgdf, 3, 'yfirlina','code_id')
+        confphgdf = solutions(confsolph, confphgdf, 4, 'malabreidd','code_id')
+        confphgdf = solutions(confsolph, confphgdf, 5, 'malahalli','code_id')
+        confphgdf = solutions(confsolph, confphgdf, 6, 'malabratti','code_id')
+        confphgdf = solutions(confsolph, confphgdf, 7, 'stada_haekla_hlid','code_id')
+        confphgdf = solutions(confsolph, confphgdf, 8, 'stada_haekla_aftan','code_id')
+        confphgdf = solutions(confsolph, confphgdf, 9, 'klaufhalli','code_id')
+        confphgdf = solutions(confsolph, confphgdf, 10, 'jugurfesta','code_id')
+        confphgdf = solutions(confsolph, confphgdf, 11, 'jugurband','code_id')
+        confphgdf = solutions(confsolph, confphgdf, 12, 'jugurdypt','code_id')
+        confphgdf = solutions(confsolph, confphgdf, 13, 'spenalengd','code_id')
+        confphgdf = solutions(confsolph, confphgdf, 14, 'spenathykkt','code_id')
+        confphgdf = solutions(confsolph, confphgdf, 15, 'spenastada','code_id')
+        confphgdf = solutions(confsolph, confphgdf, 16, 'mjaltir','code_id')
+        confphgdf = solutions(confsolph, confphgdf, 17, 'skap','code_id')
+        confphgdf['boldypt'] = scaling(confphgdf,'boldypt',1, conf_ave)
+        confphgdf['utlogur'] = scaling(confphgdf,'utlogur',1, conf_ave)
+        confphgdf['yfirlina'] = scaling(confphgdf,'yfirlina',1, conf_ave)
+        confphgdf['malabreidd'] = scaling(confphgdf,'malabreidd',1, conf_ave)
+        confphgdf['malahalli'] = scaling(confphgdf,'malahalli',1, conf_ave)
+        confphgdf['malabratti'] = scaling(confphgdf,'malabratti',1, conf_ave)
+        confphgdf['stada_haekla_hlid'] = scaling(confphgdf,'stada_haekla_hlid',1, conf_ave)
+        confphgdf['stada_haekla_aftan'] = scaling(confphgdf,'stada_haekla_aftan',1, conf_ave)
+        confphgdf['klaufhalli'] = scaling(confphgdf,'klaufhalli',1, conf_ave)
+        confphgdf['jugurfesta'] = scaling(confphgdf,'jugurfesta',1, conf_ave)
+        confphgdf['jugurband'] = scaling(confphgdf,'jugurband',1, conf_ave)
+        confphgdf['jugurdypt'] = scaling(confphgdf,'jugurdypt',1, conf_ave)
+        confphgdf['spenalengd'] = scaling(confphgdf,'spenalengd',1, conf_ave)
+        confphgdf['spenathykkt'] = scaling(confphgdf,'spenathykkt',1, conf_ave)
+        confphgdf['spenastada'] = scaling(confphgdf,'spenastada',1, conf_ave)
+        confphgdf['mjaltir'] = scaling(confphgdf,'mjaltir',1, conf_ave)
+        confphgdf['skap'] = scaling(confphgdf,'skap',1, conf_ave)
+        print('Phantom group results collected for conformation ')
+        print(confphgdf.iloc[0:51])
+        print(confphgdf.info())
+        if seperate_files == 1:
+            print('PHG conformation results written to seperate file')
+            confphgdf.to_csv(confebvphg, index=False, header=False, sep=' ')
+            print(f'PHG conformation results written to {confebvphg}')
+    else:
+        print('Phantom group results collected for conformation not collected')
 else:
     print('Conformation results not collected')
 
 #Reading rankorder SOL file, collecting and scaling results and counting daughters
 #Write results to disc if option above set to 1
 if rankorder_results == 1:
+
     #Reading sol files
-    rankordersol = readingfile(rankordersolfile,solcolumns,sol_widths)
-    #Phantom group results
-    rankorderph = phantomsol(rankordersol)
+    rankordersol = readingfilefwf(rankordersolfile,solcolumns,sol_widths)
+    #Sepererating phantom groups from known animals in SOL file and merging real id's
+    rankordersolids, rankordersolph = solread(rankordersol)
     #Seperating solutions by traits
     rankorderdf = radnrkodi['id'].copy()  #Creating a dataframe to merge trait results
-
-    rankorderdf = solutions(rankordersol, rankorderdf, 1, 'mjaltarod','id')
-    rankorderdf = solutions(rankordersol, rankorderdf, 1, 'gaedarod','id')
+    rankorderdf = solutions(rankordersolids, rankorderdf, 1, 'mjaltarod','id')
+    rankorderdf = solutions(rankordersolids, rankorderdf, 2, 'gaedarod','id')
     #Reading own observations files
     ownobs_rankorder = ownobs(rankorderobs,rankorder_columns)
     #Creating average groups to scale
@@ -455,8 +549,6 @@ if rankorder_results == 1:
     rankorderdf['gaedarod'] = scaling(rankorderdf,'gaedarod',-1, rankorder_ave)
 
     #Counting daughters with own obs
-    #Reading pedigree
-    ped = readingfile(pedigreefile,ped_columns,ped_widths)
     ownobs_rankorder = pd.merge(left=ownobs_rankorder, right=ped[['id','sire']], on='id', how='left')
 
     rankorderdf = countingoff(ownobs_rankorder,'mjaltarod','offrankorder', rankorderdf)
@@ -469,6 +561,23 @@ if rankorder_results == 1:
 
     print(rankorderdf.iloc[50000:50015])
     print(rankorderdf.info())
+
+    if phantomcollection == 1:
+
+        rankorderphgdf = rankordersolph['code_id'].copy()
+        rankorderphgdf = solutions(rankordersolph, rankorderphgdf, 1, 'mjaltarod','code_id')
+        rankorderphgdf = solutions(rankordersolph, rankorderphgdf, 2, 'gaedarod','code_id')
+        rankorderphgdf['mjaltarod'] = scaling(rankorderphgdf,'mjaltarod',-1, rankorder_ave)
+        rankorderphgdf['gaedarod'] = scaling(rankorderphgdf,'gaedarod',-1, rankorder_ave)
+        print('Phantom group results collected for rank order')
+        print(rankorderphgdf.iloc[0:51])
+        print(rankorderphgdf.info())
+        if seperate_files == 1:
+            print('PHG Rankorder results written to seperate file')
+            rankorderphgdf.to_csv(rankorderebvphg, index=False, header=False, sep=' ')
+            print(f'PHG Rankorder results written to {rankorderebvphg}')
+    else:
+        print('Phantom group results collected for rank order not collected')
 else:
     print('Rank order results not collected')
 
@@ -492,7 +601,7 @@ if collectresults == 1:
     results = combineresultsfwf(results,accyield,accyield_columns,widths_accyield) #accuracy yield
     results = combineresultsfwf(results,accscs,accscs_columns,widths_accscs) #accuracy scs
 
-    results = results[(results['milk_kg1'].notnull().astype(int) == 1)] #only results for animals in yield file
+    results = results[(results['my1'].notnull().astype(int) == 1)] #only results for animals in yield file
 
 
     if fertility_results == 0:
@@ -510,27 +619,26 @@ if collectresults == 1:
     elif rankorder_results == 1:
         results = combineresultsdf(results,rankorderdf,rankorderebv_columns)
 
-
     #Combination of three lactations to make one trait
-    results['milk_kgt'] = (results['milk_kg1'] * 0.5 +
-                            results['milk_kg2'] * 0.3 +
-                            results['milk_kg3'] * 0.2 )
+    results['myt'] = (results['my1'] * 0.5 +
+                            results['my2'] * 0.3 +
+                            results['my3'] * 0.2 )
 
-    results['fat_kgt'] = (results['fat_kg1'] * 0.5 +
-                            results['fat_kg2'] * 0.3 +
-                            results['fat_kg3'] * 0.2 )
+    results['fyt'] = (results['fy1'] * 0.5 +
+                            results['fy2'] * 0.3 +
+                            results['fy3'] * 0.2 )
 
-    results['prot_kgt'] = (results['prot_kg1'] * 0.5 +
-                            results['prot_kg2'] * 0.3 +
-                            results['prot_kg3'] * 0.2 )
+    results['pyt'] = (results['py1'] * 0.5 +
+                            results['py2'] * 0.3 +
+                            results['py3'] * 0.2 )
 
-    results['fat_%t'] = (results['fat_%1'] * 0.5 +
-                            results['fat_%2'] * 0.3 +
-                            results['fat_%3'] * 0.2 )
+    results['fpt'] = (results['fp1'] * 0.5 +
+                            results['fp2'] * 0.3 +
+                            results['fp3'] * 0.2 )
 
-    results['prot_%t'] = (results['prot_%1'] * 0.5 +
-                            results['prot_%2'] * 0.3 +
-                            results['prot_%3'] * 0.2 )
+    results['ppt'] = (results['pp1'] * 0.5 +
+                            results['pp2'] * 0.3 +
+                            results['pp3'] * 0.2 )
 
 #Creation of a total grade for udder
     results['jugur'] = (results['jugurfesta'] * 0.35 +
@@ -539,7 +647,7 @@ if collectresults == 1:
 
 #Creation of a total grade for tits
     results['spenar'] = (results['spenalengd'] * 0.3 +
-                            (200 - results['spenaþykkt']) * 0.3 +
+                            (200 - results['spenathykkt']) * 0.3 +
                             results['spenastada'] * 0.4 )
 
 #Creation of a total grade for milking
@@ -569,34 +677,21 @@ if collectresults == 1:
                     results['longevity']*0.0)
 
 #Scaled EBVs written to disc
-    if branda == 1:
+    if writebranda == 1:
+        results.loc[:, 'skap2'] = results['skap']
+        branda = results[brandafile_columns].astype(int)  #72 columns
 
-        branda = results[['id',                                             #1
-            'milk_kg1','milk_kg2','milk_kg3','fat_kg1','fat_kg2','fat_kg3', #6
-            'prot_kg1','prot_kg2','prot_kg3','fat_%1','fat_%2','fat_%3',    #6
-            'prot_%1','prot_%2','prot_%3','scs1','scs2','scs3',             #6
-            'milkper', 'fatper', 'protper',                                 #3
-            'fer_lact1','fer_lact2','fer_lact3','CR0','ICF','IFL',          #6
-            'boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahalli', 'malabratti', #6
-            'stada_haekla_hlid', 'stada_haekla_aftan', 'klaufhalli', 'jugurfesta', #4
-            'jugurband', 'jugurdypt', 'spenalengd', 'spenaþykkt', 'spenastada',  #5
-            'mjaltir', 'skap','mjaltarod', 'gaedarod','longevity',              #5
-            'milk_kgt','fat_kgt','prot_kgt','fat_%t','prot_%t',                 #5
-            'yieldtotal','fertility','scs','jugur','spenar','mjaltir_t','skap', #7
-            'total',                                                             #1
-            'no_daughters_yield', 'yield_acc', 'no_daughters_SCS', 'SCS_acc', #4
-            'offconf','offrankorder','offCR0','offICF1','offICF2','offICF3', #6
-            'no_daughters_longevity'                                        #1
-            ]].astype(int)                                            #72 columns
+#         np.savetxt(brandafile, branda,
+#         fmt='%15s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
+# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
+# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
+# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
+# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
+# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s')
 
-
-        np.savetxt(brandafile, branda,
-        fmt='%15s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-        %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-        %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-        %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-        %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-        %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s')
+        # branda['BY'] = (branda.id.astype(str).str[:4]).astype(int)
+        # branda2000 = branda.loc[(branda['BY'] >= 2000 )]
+        #
 
         print(branda.iloc[500000:500015])
         print(branda.info())
@@ -634,4 +729,124 @@ if collectdmufiles == 1:
     collectfiles('fertility',yearmonth)
     collectfiles('conformation',yearmonth)
     collectfiles('rankorder',yearmonth)
+
+
+if plotting == 1:
+    #---------------------------------------------------------------------------
+    #If plotting == 1 then program will create plots with genetic trends
+    #Functions that create plots are in kynbotamat_module
+    #---------------------------------------------------------------------------
+    branda['BY'] = (branda.id.astype(str).str[:4]).astype(int)
+    branda2000 = branda.loc[(branda['BY'] >= 2000 )]
+
+    #Mean EBV per birth year is found for all traits
+    argangar = (branda2000.groupby('BY')['my1','my2','my3','fy1','fy2','fy3',
+    'py1','py2','py3','fp1','fp2','fp3',
+    'pp1','pp2','pp3','scs1','scs2','scs3',
+    'milkper', 'fatper', 'protper',
+    'fer_lact1','fer_lact2','fer_lact3','CR0','ICF','IFL',
+    'boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahalli', 'malabratti',
+    'stada_haekla_hlid', 'stada_haekla_aftan', 'klaufhalli', 'jugurfesta',
+    'jugurband', 'jugurdypt', 'spenalengd', 'spenathykkt', 'spenastada',
+    'mjaltir', 'skap','mjaltarod', 'gaedarod','longevity',
+    'myt','fyt','pyt','fpt','ppt',
+    'yieldtotal','fertility','scs','jugur','spenar','mjaltir_t','skap2','total'
+        ].mean()).reset_index()
+    argangar.to_csv('../results/meanargangar.txt' , index=False, header=True, sep=' ')
+
+    xticks = [2000,2002,2004,2006,2008,2010,2012,2014,2016,2018,2020]
+    yticks = [75,80,85,90,95,100,105,110]
+
+    #Creating figure and 16 subplots
+    fig, ((ax1, ax2, ax3, ax4),
+        (ax5, ax6, ax7, ax8),
+        ( ax9, ax10 ,ax11, ax12),
+        (ax13, ax14, ax15, ax16))  = plt.subplots(4,4, sharey=True, sharex=True)
+
+    #This figure shows regression
+    plottingmeansns(ax1,argangar,'BY','yieldtotal','Skalaðar einkunnir','Afurðir heildareinkun')
+    plottingmeansns(ax2,argangar,'BY','myt','','Mjólk kg')
+    plottingmeansns(ax3,argangar,'BY','fyt','','Fita kg')
+    plottingmeansns(ax4,argangar,'BY','pyt','','Prótein kg')
+
+    plottingmeansns(ax5,argangar,'BY','fpt','Skalaðar einkunnir','Fitu %')
+    plottingmeansns(ax6,argangar,'BY','ppt','','Prótein %')
+    plottingmeansns(ax7,argangar,'BY','milkper','','Mjólkurúthald')
+    plottingmeansns(ax8,argangar,'BY','scs','','Frumutala')
+
+    plottingmeansns(ax9,argangar,'BY','CR0','Skalaðar einkunnir','Kvígur, fanghlutfall við fyrstu sæðingu')
+    plottingmeansns(ax10,argangar,'BY','ICF','','Bil milli burðar og fyrstu sæðingar')
+    plottingmeansns(ax11,argangar,'BY','IFL','','Bil milli fyrstu og seinustu sæðingar')
+    plottingmeansns(ax12,argangar,'BY','boldypt','','Boldýpt')
+
+    plottingmeansns(ax13,argangar,'BY','utlogur','Skalaðar einkunnir','Útlögur')
+    plottingmeansns(ax14,argangar,'BY','jugur','','Júgur')
+    plottingmeansns(ax15,argangar,'BY','spenar','','Spenar')
+    plottingmeansns(ax16,argangar,'BY','total','','Heildareinkunn')
+
+    fig.suptitle('Aðhvarf á meðalkynbótamat árganga', fontsize=26, fontweight ="bold")
+    plt.subplots_adjust(left=0.07, bottom=0.08, right=0.96, top=None, wspace=0.05, hspace=0.11)
+    fig.set_size_inches([20, 10])
+    plt.savefig('../figures/regressionbirthyear20211127.png')
+
+    #Creating figure and 16 subplots
+    fig, ((ax1, ax2, ax3, ax4),
+        (ax5, ax6, ax7, ax8),
+        ( ax9, ax10 ,ax11, ax12),
+        (ax13, ax14, ax15, ax16))  = plt.subplots(4,4, sharey=True, sharex=True)
+
+    plottingmean(ax1,branda2000,'my1','Skalaðar einkunnir','Mjólk kg 1. mjalt')
+    plottingmean(ax1,branda2000,'my2','Skalaðar einkunnir','Mjólk kg 2. mjalt')
+    plottingmean(ax1,branda2000,'my3','Skalaðar einkunnir','Mjólk kg 3. mjalt')
+    plottingmean(ax2,branda2000,'fy1','','Fita kg 1. mjalt')
+    plottingmean(ax2,branda2000,'fy2','','Fita kg 2. mjalt')
+    plottingmean(ax2,branda2000,'fy3','','Fita kg 3. mjalt')
+    plottingmean(ax3,branda2000,'py1','','Prótein kg 1. mjalt')
+    plottingmean(ax3,branda2000,'py2','','Prótein kg 2. mjalt')
+    plottingmean(ax3,branda2000,'py3','','Prótein kg 3. mjalt')
+    plottingmean(ax4,branda2000,'yieldtotal','','Heildarafurðaeinkun')
+
+    plottingmean(ax5,branda2000,'fp1','Skalaðar einkunnir','Fitu % 1. mjalt')
+    plottingmean(ax5,branda2000,'fp2','Skalaðar einkunnir','Fitu % 2. mjalt')
+    plottingmean(ax5,branda2000,'fp3','Skalaðar einkunnir','Fitu % 3. mjalt')
+    plottingmean(ax6,branda2000,'pp1','','Prótein % 1. mjalt')
+    plottingmean(ax6,branda2000,'pp2','','Prótein % 2. mjalt')
+    plottingmean(ax6,branda2000,'pp3','','Prótein % 3. mjalt')
+    plottingmean(ax7,branda2000,'scs1','','Frumutala 1. mjalt')
+    plottingmean(ax7,branda2000,'scs2','','Frumutala 2. mjalt')
+    plottingmean(ax7,branda2000,'scs3','','Frumutala 3. mjalt')
+    plottingmean(ax8,branda2000,'milkper','','Mjólkurúthald')
+    plottingmean(ax8,branda2000,'fatper','','Fituúthald')
+    plottingmean(ax8,branda2000,'protper','','Próteinúthald')
+
+    plottingmean(ax9,branda2000,'CR0','Skalaðar einkunnir','Kvígur, fanghlutfall við fyrstu sæðingu')
+    plottingmean(ax9,branda2000,'ICF','Skalaðar einkunnir','Bil milli burðar og fyrstu sæðingar')
+    plottingmean(ax9,branda2000,'IFL','Skalaðar einkunnir','Bil milli fyrstu og seinustu sæðingar')
+    plottingmean(ax10,branda2000,'boldypt','','Boldýpt')
+    plottingmean(ax10,branda2000,'utlogur','','Útlögur')
+    plottingmean(ax10,branda2000,'yfirlina','','Yfirlína')
+    plottingmean(ax11,branda2000,'malabreidd','','Malabreidd')
+    plottingmean(ax11,branda2000,'malahalli','','Malahalli')
+    plottingmean(ax11,branda2000,'malabratti','','Malabratti')
+    plottingmean(ax12,branda2000,'stada_haekla_hlid','','Staða hækla - hlið')
+    plottingmean(ax12,branda2000,'stada_haekla_aftan','','Staða hækla - aftan')
+    plottingmean(ax12,branda2000,'klaufhalli','','Klaufhalli')
+
+    plottingmean(ax13,branda2000,'jugurfesta','Skalaðar einkunnir','Júgurfesta')
+    plottingmean(ax13,branda2000,'jugurband','Skalaðar einkunnir','Júgurband')
+    plottingmean(ax13,branda2000,'jugurdypt','Skalaðar einkunnir','Júgurdýpt')
+    plottingmean(ax14,branda2000,'spenalengd','','Spenalengd')
+    plottingmean(ax14,branda2000,'spenathykkt','','Spenaþykkt')
+    plottingmean(ax14,branda2000,'spenastada','','Spenastaða')
+    plottingmean(ax15,branda2000,'mjaltir','','Mjaltir')
+    plottingmean(ax15,branda2000,'skap','','Skap')
+    plottingmean(ax16,branda2000,'total','','Heildareinkunn')
+
+    fig.suptitle('Meðalkynbótamat árganga', fontsize=26, fontweight ="bold")
+    plt.subplots_adjust(left=0.05, bottom=0.07, right=0.97, top=0.94, wspace=0.05, hspace=0.09)
+
+    fig.set_size_inches([20, 10])
+    plt.savefig('../figures/meanbybirthyear20211127.png')
+
+    # plt.show()
 #
