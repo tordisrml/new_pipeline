@@ -10,30 +10,70 @@ import numpy as np
 import datetime
 import os
 import shutil
+import subprocess
+from matplotlib import pyplot as plt
 
 #user defined functions used by program from kynbotamat_module.py
 from kynbotamat_module import readfilecsv
 from kynbotamat_module import readingfilefwf
 from kynbotamat_module import hy_grouping
+from kynbotamat_module import plottingmean
 
 #Option to create observations files for DMU, 0 means skip and 1 means create
+preptdm = 0
+
 fertilitydmu = 0
 confdmu = 0
 rankorderdmu = 0
 
 prepfordmu = 1
 
+plottdm = 0
 #---------------------------------------------------------------------------
 #File with information for program!
-info = pd.read_csv(
-    'info',
+control = pd.read_csv(
+    'control.txt',
     header=None,
-    names=['info']
+    names=['control']
     )
 #---------------------------------------------------------------------------
-#Info for program
+
 #---------------------------------------------------------------------------
-yearmonth = info.loc[21,'info']  #year and month of breeding value estamation
+# PART 1 - SORT PEDIGREE, MERGE TDM FILES AND RUN PREP_TDM IN SHELL!
+#---------------------------------------------------------------------------
+
+if preptdm == 1 :
+    print('Part 1 of program')
+    #Name of pedigree file
+    pedigreefile = control.loc[11,'control']
+    sortedped = control.loc[10,'control']
+    oldtdm = control.loc[16,'control']
+    newtdm = control.loc[17,'control']
+    tdmfile = control.loc[9,'control']
+
+    sortingped = f'sort +0.0 -0.15 {pedigreefile} -o {sortedped}'
+
+    combinetdm = f"cat {oldtdm} {newtdm} | awk -F',' '!a[$1$5$6$7$8$9$10$11]++' > {tdmfile}"
+
+    subprocess.call(sortingped, shell=True)
+    print('Sorting pedigree in shell done')
+
+    subprocess.call(combinetdm, shell=True)
+    print('Combining TDM files in shell done')
+
+    subprocess.call('gfortran -o preptdm preptdm_5.f', shell=True)
+    print('Compiling preptdm.f done')
+
+    subprocess.call('./preptdm', shell=True)
+
+else:
+    print( f'No prepping for TDM' )
+
+
+#---------------------------------------------------------------------------
+#PART 2 - INFORMATION FOR PROGRAM
+#---------------------------------------------------------------------------
+yearmonth = control.loc[15,'control']  #year and month of breeding value estamation
 
 #Radnrkodifile
 radnrkodifile = '../dmu_data/radnrkodi' #Created by prep_tdm.f
@@ -42,18 +82,18 @@ radnrkodi_columns = ['id','code_id','stada','norec','fix1','fix2', 'fix3','sex']
 widths_radnrkodi = [15,9,3,3,6,6,6,2]
 
 #Date of the fertility-data collection from Huppa!
-collectiondate = pd.to_datetime(info.loc[12,'info'], format='%Y%m%d')
+collectiondate = pd.to_datetime(control.loc[20,'control'], format='%Y%m%d')
 #---------------------------------------------------------------------------
 #Insemination file from Huppa for fertility
 #Datafile 1, info about inseminations. One line for every ins.
-insfile = info.loc[8,'info']
+insfile = control.loc[18,'control']
 insfile_columns = ['id','ins','tech','comment','lact']
 #Cow file from Huppa for fertility
-cowfile = info.loc[10,'info']
+cowfile = control.loc[19,'control']
 cowfile_columns = ['id','herd','birth','death','calv1','calv2','calv3','calv4']
 
 #Conformation file from Huppa
-conformationfile = info.loc[15,'info']
+conformationfile = control.loc[21,'control']
 conformationfile_columns=['id','domsdagur','birth','calv1','calv2','unused',
 'staerd','boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahalli', 'malabratti',
 'stada_haekla_hlid', 'stada_haekla_aftan', 'klaufhalli', 'jugurjafnvaegi', 'jugurfesta',
@@ -62,7 +102,7 @@ conformationfile_columns=['id','domsdagur','birth','calv1','calv2','unused',
 widths_conformationfile = [15,8,8,8,8,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,7]
 
 #Rank order file from Huppa
-rankorderfile = info.loc[18,'info']
+rankorderfile = control.loc[22,'control']
 rankorderfile_columns=['instring']
 widths_rankorderfile = [38]
 
@@ -96,9 +136,13 @@ def check(df,trait1,trait2,trait3,trait4,heifer,first,second,third,newcolumn, ou
         return df[newcolumn]
 #---------------------------------------------------------------------------
 
+#---------------------------------------------------------------------------
+# PART 3 - CREATION OF FERTILITY, CONFORMATION AND RANK ORDER DMU FILES
+#---------------------------------------------------------------------------
+
 #-------------------------------------------------------------
 #Reading in ranrkodi to replace IDs with code ids, radnrkodi is created by preptdm.f
-if (fertilitydmu == 1) | (confdmu == 1) | (rankorderdmu == 1) :
+if (fertilitydmu == 1) | (confdmu == 1) | (rankorderdmu == 1) | (plottdm == 1) :
     radnrkodi = readingfilefwf(radnrkodifile,radnrkodi_columns,widths_radnrkodi)
     radnrkodi = radnrkodi.drop(
         ['stada','norec','fix1','fix2', 'fix3','sex'], axis = 1)
@@ -713,6 +757,10 @@ else:
     print( f'DMU rank order file not created' )
 
 
+#---------------------------------------------------------------------------
+# PART 3 - Prepping for DMU runs
+#---------------------------------------------------------------------------
+
 if prepfordmu == 1:
     #---------------------------------------------------------------------------
     #This function creates a directory for current DMU run
@@ -729,7 +777,7 @@ if prepfordmu == 1:
         dirpath = f'../DMU/{year}/{trait}/dir' #copies dir files from dir folder to trait folder
         isExist = os.path.exists(dirpath)
         if not isExist:
-            shutil.copy(f'../DMU/dir_files/{trait}_dir', dirpath)
+            shutil.copy(f'../DMU/dir_files/{trait}.dir', dirpath)
             print(f'{dirpath} is created!')
         else:
             print(f'{dirpath} exists!')
@@ -751,9 +799,53 @@ if prepfordmu == 1:
             print(f'{path} exists!')
 
     #yearmonth variable is read from info file
-    prep('fertility',yearmonth)
-    prep('conformation',yearmonth)
-    prep('rankorder',yearmonth)
+    prep('my',yearmonth)
+    prep('fy',yearmonth)
+    prep('py',yearmonth)
+    prep('fp',yearmonth)
+    prep('pp',yearmonth)
+    prep('scs',yearmonth)
+    prep('fer',yearmonth)
+    prep('conf',yearmonth)
+    prep('rank',yearmonth)
 
+# if plottdm == 1:
+#
+#     tdm1file = '../dmu_data/tdm1.dat'
+#
+#     tdm1file_columns = ['code_id','hy','htd','agec','m','lp1','lp2','lp3','lp4','wil',
+#         'my1','my2','my3','dim','herd','calvm']
+#     widths_tdm1file = [8,8,8,5,5,8,9,9,9,9,8,8,8,9,8,8]
+#
+#     tdm1 = readingfilefwf(tdm1file,tdm1file_columns,widths_tdm1file)
+#
+#     tdm1 = pd.merge(left=tdm1, right=radnrkodi[['id','code_id']], on='code_id', how='left')
+#
+#     tdm1['BY'] = (tdm1.id.astype(str).str[:4]).astype(int)
+#
+#     tdm11 = tdm1.loc[(tdm1['my1'] > 0)]
+#     tdm12 = tdm1.loc[(tdm1['my2'] > 0)]
+#     tdm13 = tdm1.loc[(tdm1['my3'] > 0)]
+#
+#
+#     tdm11.loc[:, 'totalmy1'] = tdm11.groupby('code_id')['my1'].transform('sum')
+#     tdm12.loc[:, 'totalmy2'] = tdm12.groupby('code_id')['my2'].transform('sum')
+#     tdm13.loc[:, 'totalmy3'] = tdm13.groupby('code_id')['my3'].transform('sum')
+#
+#
+#     print(tdm1.iloc[800000:800015])
+#     print(tdm1.info())
+#
+#     fig, (ax1) = plt.subplots(1, sharey=True)
+#
+#     plottingmean(ax1,tdm11,'totalmy1','Mjólkurmagn','Mjaltaskeið 1')
+#     plottingmean(ax1,tdm12,'totalmy2','Mjólkurmagn','Mjaltaskeið 2')
+#     plottingmean(ax1,tdm13,'totalmy3','Mjólkurmagn','Mjaltaskeið 3')
+#     ax1.set_title('Mean sum of TD yield by lact by birth year', fontsize=10, fontweight ="bold")
+#
+#     fig.set_size_inches([20, 10])
+#     plt.savefig('../figures/regressionbirthyear20211127.png')
+#
+#     plt.show()
 
 #
