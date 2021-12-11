@@ -1,0 +1,48 @@
+#**********************************************************************
+# This is the file DMU1 read from standard input                      *
+#                                                                     *
+# Lines starting with # are lines with information's                  *
+# on how and what to fill in.                                         *
+#                                                                     *
+# Lines starting with $ are KEYWORD lines used to locate              *
+# information's in this file.                                         *
+#                                                                     *
+#**********************************************************************
+$COMMENT
+Kynbotamat TDM fita
+
+$ANALYSE 12 2 0 0
+
+$DATA  ASCII (5,21,-98) ../../../dmu_data/tdm2.dat
+
+$VARIABLE
+ID hyp htd cac burdman
+lp1 lp2 lp3 lp4 wil fit1 fit2 fit3 prot1 prot2 prot3 fp1 fp2 fp3 pp1 pp2 pp3 scc1 scc2 scc3 herd
+
+$MODEL
+3 3 0 0 0
+0
+0
+0
+6 0 6 2 4 5 3 1 1
+7 0 6 2 4 5 3 1 1
+8 0 6 2 4 5 3 1 1
+3 1 2 3
+3 1 2 3
+3 1 2 3
+9 1(0 5 6) 2 3 4 5(0 5 6)
+9 1(0 5 6) 2 3 4 5(0 5 6)
+9 1(0 5 6) 2 3 4 5(0 5 6)
+3
+1 2
+1 3
+2 3
+
+$VAR_STR 2 PED 6 RANDOM 1.0 ASCII ../../../dmu_data/dmu_ped.txt
+
+$PRIOR fy.par
+
+
+$DMU5
+30000
+1e-9

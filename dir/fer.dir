@@ -1,0 +1,70 @@
+#**********************************************************************
+# This is the file DMU1 read from standard input                      *
+#                                                                     *
+# Lines starting with # are lines with information's                  *
+# on how and what to fill in.                                         *
+#                                                                     *
+# Lines starting with $ are KEYWORD lines used to locate              *
+# information's in this file.                                         *
+#                                                                     *
+#**********************************************************************
+
+$COMMENT
+Kynbotamat frjosemi
+Estimation of breeding values for fertility
+
+$ANALYSE 12 2 0 0
+
+$DATA  ASCII (14,7,-999) ../../../dmu_data/dmu_fertility.txt
+
+
+$VARIABLE
+#  1     2   3    4   5   6     7    8    9    10     11     12      13     14
+code_id H_BY HC1 HC2 HC3 IYM0 IYM1 IYM2 IYM3 AGEi_h AGEc_1 AGEc_2 AGEc_3 tech_h
+# 1  2    3     4    5    6    7
+CRh ICF1 ICF2 ICF3 IFL1 IFL2 IFL3
+
+
+$MODEL
+7
+0
+0
+0
+0
+0
+0
+0
+1 0 5 2 6 10 14 1
+2 0 4 3 7 11 1
+3 0 4 4 8 12 1
+4 0 4 5 9 13 1
+5 0 4 3 7 11 1
+6 0 4 4 8 12 1
+7 0 4 5 9 13 1
+1 1
+1 1
+1 1
+1 1
+1 1
+1 1
+1 1
+0
+0
+0
+0
+0
+0
+0
+0
+
+#----------------------------------------------------------------------
+
+$VAR_STR  1 PED 6 RANDOM 1.0 ASCII ../../../dmu_data/dmu_ped.txt
+
+
+$PRIOR fer.par
+
+
+$DMU5
+30000
+1e-9

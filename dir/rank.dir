@@ -1,0 +1,51 @@
+#**********************************************************************
+# This is the file DMU1 read from standard input                      *
+#                                                                     *
+# Lines starting with # are lines with information's                  *
+# on how and what to fill in.                                         *
+#                                                                     *
+# Lines starting with $ are KEYWORD lines used to locate              *
+# information's in this file.                                         *
+#                                                                     *
+#**********************************************************************
+$COMMENT
+Kynbotamat mjaltarod og gaedarod
+Estimation of breeding values for two rank order traits
+
+$ANALYSE 12 2 0 0
+
+
+$DATA  ASCII (2,2,-999) ../../../dmu_data/dmu_rankorder.txt
+
+
+$VARIABLE
+#  1      2
+code_id year
+# 1        2
+mjaltarod gaedarod
+
+
+#	Model:
+
+$MODEL
+2
+0
+0
+1 0 1 1
+2 0 1 1
+1 1
+1 1
+0
+0
+0
+
+
+$VAR_STR  1 PED 6 RANDOM 1.0 ASCII ../../../dmu_data/dmu_ped.txt
+
+
+$PRIOR rank.par
+
+
+$DMU5
+30000
+1e-9
