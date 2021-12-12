@@ -17,11 +17,11 @@ Kynbotamat TDM fituhlutfall
 $ANALYSE 12 2 0 0
 
 
-$DATA  ASCII (5,8,-98) ../../../dmu_data/tdm3.dat
+$DATA  ASCII (5,11,-98) ../../../dmu_data/tdm3.dat
 
 $VARIABLE
-ID hy htd cac burdman
-lp1 lp2 lp3 lp4 wil fp1 fp2 fp3
+ID hy htd cac tdmonth
+lp1 lp2 lp3 lp4 wil fp1 fp2 fp3 pp1 pp2 pp3 dim herd burdman
 
 $MODEL
 3 3 0 0 0
@@ -43,11 +43,12 @@ $MODEL
 2 3
 
 
-$VAR_STR  2 PED 6 ASCII ../../../dmu_data/dmu_ped.txt
+$VAR_STR 2 PED 6 RANDOM 1.0 ASCII ../../../dmu_data/dmu_ped.txt
+
 
 $PRIOR fp.par
 
 
 $DMU5
-30000 1e-7
+30000 1e-9
 6000

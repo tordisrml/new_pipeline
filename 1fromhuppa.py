@@ -22,11 +22,11 @@ from kynbotamat_module import plottingmean
 #Option to create observations files for DMU, 0 means skip and 1 means create
 preptdm = 0
 
-fertilitydmu = 0
-confdmu = 0
-rankorderdmu = 0
+fertilitydmu = 1
+confdmu = 1
+rankorderdmu = 1
 
-prepfordmu = 1
+prepfordmu = 0
 
 plottdm = 0
 #---------------------------------------------------------------------------
@@ -419,6 +419,7 @@ if fertilitydmu == 1:
     #---------------------------------------------------------------------------
     #Observations that fulfill every condition are collected
     data_use = cows_df[(
+        cows_df['id'] < 900000000000000) & (  #
         cows_df['herd'].notnull().astype(int) == 1) & (  #herd missing
         cows_df['birth'].notnull().astype(int) == 1) & (  #no birth year
         cows_df['wrong'].notnull().astype(int) == 0) & ( #AFC or AFI wrong
@@ -622,6 +623,7 @@ if confdmu == 1:
     df = df.loc[(df['id'].notnull().astype(int) == 1)]
     #ID changed to integer
     df['id'] = df['id'].astype(int)
+    df = df.loc[df['id'] < 900000000000000]
 
     #Dropping unused columns
     df = df.drop(
@@ -739,6 +741,8 @@ if rankorderdmu == 1:
     df = df.loc[(df['mjaltarod'] > 0) & (df['gaedarod'] > 0) ]
     df = df.drop(['instring'], axis = 1)
 
+    df = df.loc[df['id'] < 900000000000000]
+
     df = pd.merge(left=df, right=radnrkodi[['id','code_id']], on='id', how='left')
     df = df.sort_values(by=['code_id'])
     df = df[df['code_id'].notnull().astype(int) == 1]
@@ -758,7 +762,7 @@ else:
 
 
 #---------------------------------------------------------------------------
-# PART 3 - Prepping for DMU runs
+# PART 4 - Prepping for DMU runs
 #---------------------------------------------------------------------------
 
 if prepfordmu == 1:
@@ -777,10 +781,18 @@ if prepfordmu == 1:
         dirpath = f'../DMU/{year}/{trait}/dir' #copies dir files from dir folder to trait folder
         isExist = os.path.exists(dirpath)
         if not isExist:
-            shutil.copy(f'../DMU/dir_files/{trait}.dir', dirpath)
+            shutil.copy(f'/dir/{trait}.dir', dirpath)
             print(f'{dirpath} is created!')
         else:
             print(f'{dirpath} exists!')
+
+        parpath = f'../DMU/{year}/{trait}/{trait}.par' #copies dir files from dir folder to trait folder
+        isExist = os.path.exists(parpath)
+        if not isExist:
+            shutil.copy(f'/dir/{trait}.par', parpath)
+            print(f'{parpath} is created!')
+        else:
+            print(f'{parpath} exists!')
 
         path = f'../DMU/{year}/{trait}/dmu1.sh' #copies dmu1.sh trait folder
         isExist = os.path.exists(path)
@@ -808,6 +820,10 @@ if prepfordmu == 1:
     prep('fer',yearmonth)
     prep('conf',yearmonth)
     prep('rank',yearmonth)
+
+#---------------------------------------------------------------------------
+# PART 5 - Plotting TDM phenotypic data
+#---------------------------------------------------------------------------
 
 # if plottdm == 1:
 #

@@ -22,8 +22,8 @@ $DATA  ASCII (5,11,-98) ../../../dmu_data/tdm3.dat
 
 
 $VARIABLE
-ID hyp htd cac burdman
-lp1 lp2 lp3 lp4 wil fp1 fp2 fp3 pp1 pp2 pp3
+ID hyp htd cac tdmonth
+lp1 lp2 lp3 lp4 wil fp1 fp2 fp3 pp1 pp2 pp3 dim herd burdman
 
 
 $MODEL

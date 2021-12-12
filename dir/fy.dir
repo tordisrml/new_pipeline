@@ -13,11 +13,11 @@ Kynbotamat TDM fita
 
 $ANALYSE 12 2 0 0
 
-$DATA  ASCII (5,21,-98) ../../../dmu_data/tdm2.dat
+$DATA  ASCII (5,23,-98) ../../../dmu_data/tdm2.dat
 
 $VARIABLE
-ID hyp htd cac burdman
-lp1 lp2 lp3 lp4 wil fit1 fit2 fit3 prot1 prot2 prot3 fp1 fp2 fp3 pp1 pp2 pp3 scc1 scc2 scc3 herd
+ID hyp htd cac tdmonth
+lp1 lp2 lp3 lp4 wil fit1 fit2 fit3 prot1 prot2 prot3 fp1 fp2 fp3 pp1 pp2 pp3 scc1 scc2 scc3 dim herd burdman
 
 $MODEL
 3 3 0 0 0

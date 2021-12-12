@@ -16,12 +16,15 @@ from kynbotamat_module import readingfilefwf
 from kynbotamat_module import countingoff
 from kynbotamat_module import plottingmean
 from kynbotamat_module import plottingmeansns
+from kynbotamat_module import yieldcollect
 
 #Option to read SOL files for these 3 traits and collect results, 0 means skip
 # and 1 means SOL files will be read
-fertility_results = 0
+fertility_results = 1
 conf_results = 0
 rankorder_results = 0
+
+yieldcollection = 0
 #Option to write scaled results for above traits to seperate files to be read
 #later, 0 means skip and 1 means seperate result files will be written to disc
 seperate_files = 1
@@ -33,33 +36,35 @@ seperate_files = 1
     #trait straight from the program itself.
 #Program always collects results for yield, scs, persistancy and longevity from
     #imported datafiles.
-collectresults = 1    #0 means don't, 1 means collect
+collectresults = 0    #0 means don't, 1 means collect
 
 #Option to write large datafile to disc
-writebranda = 1
+writebranda = 0
 
 collectdmufiles = 0
 
 phantomcollection = 0
 
-plotting = 1
+plotting = 0
+
+long = 0
 #---------------------------------------------------------------------------
 #File with information for program!
-info = pd.read_csv(
-    'info',
+control = pd.read_csv(
+    'control.txt',
     header=None,
-    names=['info']
+    names=['control']
     )
 #---------------------------------------------------------------------------
 #Info for program
 #---------------------------------------------------------------------------
-yearmonth = info.loc[21,'info']
-brandafile = info.loc[24,'info']
+yearmonth = control.loc[15,'control']
+brandafile = control.loc[23,'control']
 #Scaling year, present year - 5 years
-scalingyear = pd.to_numeric(info.loc[3,'info'])
+scalingyear = pd.to_numeric(control.loc[12,'control'])
 #Scaling objects
-imean = pd.to_numeric(info.loc[4,'info'])
-isd = pd.to_numeric(info.loc[5,'info'])
+imean = pd.to_numeric(control.loc[13,'control'])
+isd = pd.to_numeric(control.loc[14,'control'])
 #---------------------------------------------------------------------------
 #Radnrkodifile
 radnrkodifile = '../dmu_data/radnrkodi' #Created by prep_tdm.f
@@ -68,16 +73,17 @@ radnrkodi_columns = ['id','code_id','stada','norec','fix1','fix2', 'fix3','sex']
 widths_radnrkodi = [15,9,3,3,6,6,6,2]
 #---------------------------------------------------------------------------
 #Name of pedigree file
-pedigreefile = info.loc[1,'info']
+pedigreefile = control.loc[11,'control']
 #Format of pedigree file from Huppa
 ped_columns = ['id','dam','sire','unused','sex','unused2', 'bullno', 'name', 'farm']
 ped_widths = [15,15,15,12,1,2,5,20,20]
 #---------------------------------------------------------------------------
 
 #DMU sol files
-fertilitysolfile = '../DMU/fertilityDMU/SOL'
-rankordersolfile = '../DMU/rankorderDMU/SOL'
-confsolfile = '../DMU/conformationDMU/SOL'
+fertilitysolfile = f'../DMU/{yearmonth}/fer/SOL'
+rankordersolfile = f'../DMU/{yearmonth}/rank/SOL'
+confsolfile = f'../DMU/conf{yearmonth}//SOL'
+longsolfile = '../DMU/longDMU/SOL'
 #Format of SOL files
 solcolumns = ['1_code_effect', #2 for fixed and 4 for genetic
     '2_trait_no',   # lact 1, 2 or 3
@@ -108,6 +114,10 @@ conf_columns = ['code_id','HdomsY','lact','AGEc_1',
 rankorderobs = '../dmu_data/dmu_rankorder.txt'
 rankorder_columns = ['code_id', 'year', 'mjaltarod', 'gaedarod']
 #---------------------------------------------------------------------------
+#---------------------------------------------------------------------------
+longobs = '/home/thordis/ending/data/long20211129.txt'
+longobs_columns = ['code_id','AGEc_1','CYM1','h5y','herdCY1','L1','L2','L3']
+#---------------------------------------------------------------------------
 
 #Seperate EBV result files
 tdmebv = '../results/tdmebv.txt'    #From programs by JHE
@@ -116,7 +126,8 @@ perebv = '../results/perebv.txt'    #From programs by JHE
 fertilityebv = '../results/fertilityebv.txt' #written by this program if option above set to 1
 confebv = '../results/conformationebv.txt' #written by this program if option above set to 1
 rankorderebv = '../results/rankorderebv.txt' #written by this program if option above set to 1
-longgebv = '../results/ending.txt'          #from BHB
+endingebv = '../results/ending.txt'          #from BHB
+longebv = '../results/long.txt'          #from BHB
 #Accuracy files for yield and scs
 accyield = '../results/accuracy.sol' #From programs by JHE
 accscs = '../results/accuracy_f.sol' #From programs by JHE
@@ -136,8 +147,8 @@ widths_scsebv = [15,4,4,4,4]
 perebv_columns = ['id','milkper', 'fatper', 'protper']
 widths_perebv = [15,4,4,4]
 
-longgebv_columns = ['id','longevity', 'no_daughters_longevity']
-widths_longgebv = [15,4,4]
+endingebv_columns = ['id','ending', 'no_daughters_ending']
+widths_endingebv = [15,4,4]
 
 accyield_columns = ['id','no_daughters_yield', 'yield_acc']
 widths_accyield = [15,8,8]
@@ -157,11 +168,14 @@ confebv_columns = ['id','boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahal
 
 rankorderebv_columns = ['id','mjaltarod', 'gaedarod','offrankorder']
 
+longebv_columns = ['id','L1','L2','L3','offlong1','offlong2','offlong3']
+
 
 #Phantom group parent results
 fertilityebvphg = '../results/fertilityebvphg.txt' #written by this program if option above set to 1
 confebvphg = '../results/conformationebvphg.txt' #written by this program if option above set to 1
 rankorderebvphg = '../results/rankorderebvphg.txt' #written by this program if option above set to 1
+longebvphg = '../results/longebvphg.txt' #written by this program if option above set to 1
 #---------------------------------------------------------------------------
 
 #Large file with all solutions scaled
@@ -202,9 +216,12 @@ def solread(df):
     solp = df[(df['1_code_effect'] == 4) & (df['code_id'] < 0)]
     sol = df[(df['1_code_effect'] == 4) & (df['code_id'] > 0)] #collect animal results
     # merge real ids back into results
-    sol= pd.merge(left=sol[
-        ['code_id','2_trait_no', '6_no_obs','8_BLUP']
-        ], right=radnrkodi[['id','code_id']], on='code_id', how='left')
+    # sol= pd.merge(left=sol[
+    #     ['code_id','2_trait_no', '6_no_obs','8_BLUP']
+    #     ], right=radnrkodi[['id','code_id']], on='code_id', how='left')
+    sol= pd.merge(left=radnrkodi[
+        ['id','code_id']
+        ], right=sol[['code_id','2_trait_no', '6_no_obs','8_BLUP']], on='code_id', how='left')
     return sol, solp
 #Function to find solution for each trait in sol dataframes and merge them by ids
 #into a new df
@@ -258,6 +275,9 @@ def scaling(df,trait,x,ave_group):
     print( f'-------------------------------------------' )
     SD = ave_group[trait].std()
     mean = ave_group[trait].mean()
+    print(trait)
+    print(SD)
+    print(mean)
     df[trait] = (imean+(((df[trait]- mean )*(x) / SD) * isd ))#.astype(float).round().astype(int)
     return df[trait]
 #-------------------------------------------------------------
@@ -313,10 +333,28 @@ def combineresultsdf(df, df2,columns):
 #-------------------------------------------------------------
 #-------------------------------------------------------------
 #Reading in id codes to replace in SOL files
-if (collectresults == 1) | (fertility_results == 1) | (conf_results == 1) | (rankorder_results == 1) :
+if ((collectresults == 1)
+    | (fertility_results == 1)
+    | (conf_results == 1)
+    | (rankorder_results == 1)
+    | (long == 1)
+    | (yieldcollection == 1)
+    ):
     radnrkodi = readingfilefwf(radnrkodifile,radnrkodi_columns,widths_radnrkodi)
     radnrkodi = radnrkodi.drop(
         ['stada','norec','fix1','fix2', 'fix3','sex'], axis = 1)
+
+    # stand = []
+    # with open("/home/thordis/kynbotamat/dmu_data/radnrkodi", 'r') as fp:
+    #     for cnt, line in enumerate(fp):
+    #          stand.append(line.split())
+    # IDdiction = {x[1]:x[0] for x in stand}
+    # radnrkodi = pd.DataFrame(list(zip(IDdiction.values(), IDdiction.keys())),
+    #                     columns = ['id', 'code_id'])
+    # print("-------------------------------------------")
+    # print("radnrkodi read")
+    # print("-------------------------------------------")
+
     #Reading pedigree
     ped = readingfilefwf(pedigreefile,ped_columns,ped_widths)
 
@@ -370,13 +408,6 @@ if fertility_results == 1:
     fertilitydf = countingoff(ownobs_fertility,'ICF1','offICF1', fertilitydf)
     fertilitydf = countingoff(ownobs_fertility,'ICF2','offICF2', fertilitydf)
     fertilitydf = countingoff(ownobs_fertility,'ICF3','offICF3', fertilitydf)
-
-    fertilitydf = fertilitydf.loc[(fertilitydf['id'] > 190000000000000) & (
-        fertilitydf['id'] < 250000000000000)]
-    #Only cows allowed with id
-    fertilitydf = fertilitydf.loc[(fertilitydf['id'] > 0)]#------------------------------------------------------------------------------------
-    #ID changed to integer
-    fertilitydf['id'] = fertilitydf['id'].astype(int) #------------------------------------------------------------------------------------
 
     if seperate_files == 1:
         print('Fertility results written to seperate file')
@@ -561,6 +592,7 @@ if rankorder_results == 1:
 
     print(rankorderdf.iloc[50000:50015])
     print(rankorderdf.info())
+    print(rankorderdf)
 
     if phantomcollection == 1:
 
@@ -584,6 +616,29 @@ else:
 
 #-------------------------------------------------------------
 #-------------------------------------------------------------
+
+mysol = "/home/thordis/kynbotamat/DMU/2022jan/my/SOL"
+
+if yieldcollection == 1:
+
+
+    myebv = yieldcollect(mysol,'my1','my2','my3','code_id')
+
+    myebv = pd.merge(left=myebv, right=radnrkodi, on='code_id', how='left')
+
+
+    print(myebv.iloc[50000:50015])
+    print(myebv.info())
+
+
+
+
+#-------------------------------------------------------------
+#-------------------------------------------------------------
+
+
+#-------------------------------------------------------------
+#-------------------------------------------------------------
 #Program reads imported datafiles with EBVs for yield, scs, persistancy and
     #longevity along with accuracy for yield and scs.
     #animals that don't have EBVs for yield are removed.
@@ -597,7 +652,7 @@ if collectresults == 1:
     results = combineresultsfwf(results,tdmebv,tdmebv_columns,widths_tdmebv) #test day
     results = combineresultsfwf(results,scsebv,scsebv_columns,widths_scsebv) #somatic cell score
     results = combineresultsfwf(results,perebv,perebv_columns,widths_perebv) #persistancy
-    results = combineresultsfwf(results,longgebv,longgebv_columns,widths_longgebv)    #longevity
+    results = combineresultsfwf(results,endingebv,endingebv_columns,widths_endingebv)    #longevity
     results = combineresultsfwf(results,accyield,accyield_columns,widths_accyield) #accuracy yield
     results = combineresultsfwf(results,accscs,accscs_columns,widths_accscs) #accuracy scs
 
@@ -681,17 +736,14 @@ if collectresults == 1:
         results.loc[:, 'skap2'] = results['skap']
         branda = results[brandafile_columns].astype(int)  #72 columns
 
-#         np.savetxt(brandafile, branda,
-#         fmt='%15s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s')
+        np.savetxt(brandafile, branda,
+        fmt='%15s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
+%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
+%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
+%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
+%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
+%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s')
 
-        # branda['BY'] = (branda.id.astype(str).str[:4]).astype(int)
-        # branda2000 = branda.loc[(branda['BY'] >= 2000 )]
-        #
 
         print(branda.iloc[500000:500015])
         print(branda.info())
@@ -849,4 +901,296 @@ if plotting == 1:
     plt.savefig('../figures/meanbybirthyear20211127.png')
 
     # plt.show()
+
+#Reading rankorder SOL file, collecting and scaling results and counting daughters
+#Write results to disc if option above set to 1
+
+if long == 1:
+
+    #Reading sol files
+    longsol = readingfilefwf(longsolfile,solcolumns,sol_widths)
+    #Sepererating phantom groups from known animals in SOL file and merging real id's
+    longsolids, longsolph = solread(longsol)
+    #Seperating solutions by traits
+    longdf = radnrkodi['id'].copy()  #Creating a dataframe to merge trait results
+    longdf = solutions(longsolids, longdf, 1, 'L1','id')
+    longdf = solutions(longsolids, longdf, 2, 'L2','id')
+    longdf = solutions(longsolids, longdf, 3, 'L3','id')
+    longdf = longdf.loc[(longdf['id'] < 900000000000000)]
+    unscaledlong = longdf.copy()
+    unscaledlong.columns = ['id', 'L1x', 'L2x', 'L3x']
+    #Reading own observations files
+    ownobs_long = ownobs(longobs,longobs_columns)
+    #Creating average groups to scale
+    long_ave = avegroup(longdf,ownobs_long)
+    #Scaling results
+    longdf['L1'] = scaling(longdf,'L1',1, long_ave)
+    longdf['L2'] = scaling(longdf,'L2',1, long_ave)
+    longdf['L3'] = scaling(longdf,'L3',1, long_ave)
+
+    #Counting daughters with own obs
+    ownobs_long = pd.merge(left=ownobs_long, right=ped[['id','sire']], on='id', how='left')
+
+    longdf = countingoff(ownobs_long,'L1','offlong1', longdf)
+    longdf = countingoff(ownobs_long,'L2','offlong2', longdf)
+    longdf = countingoff(ownobs_long,'L3','offlong3', longdf)
+
+    if seperate_files == 1:
+        print('Longgevity results written to seperate file')
+        long_results = longdf[longebv_columns].astype(float).round().astype(int)
+        # long_results.to_csv(longebv, index=False, header=False, sep=' ')
+        print(f'Rankorder results written to {longebv}')
+
+    print(longdf.iloc[50000:50015])
+    print(longdf.info())
+
+    if phantomcollection == 1:
+
+        longphgdf = longsolph['code_id'].copy()
+        longphgdf = solutions(longsolph, longphgdf, 1, 'L1','code_id')
+        longphgdf = solutions(longsolph, longphgdf, 2, 'L2','code_id')
+        longphgdf = solutions(longsolph, longphgdf, 3, 'L3','code_id')
+        longphgdf['L1'] = scaling(longphgdf,'L1',1, long_ave)
+        longphgdf['L2'] = scaling(longphgdf,'L2',1, long_ave)
+        longphgdf['L3'] = scaling(longphgdf,'L3',1, long_ave)
+        print('Phantom group results collected for longevity')
+        print(longphgdf.iloc[0:51])
+        print(longphgdf.info())
+        if seperate_files == 1:
+            print('PHG Rankorder results written to seperate file')
+            longphgdf.to_csv(longebvphg, index=False, header=False, sep=' ')
+            print(f'PHG Rankorder results written to {longebvphg}')
+    else:
+        print('Phantom group results collected for longevity not collected')
+
+    longdf = combineresultsfwf(longdf,endingebv,endingebv_columns,widths_endingebv)    #longevity
+    # ----------------------------------------------------
+    #Counting the number of daughters bulls have in the pedigree file
+    # ----------------------------------------------------
+    dams = ped.loc[ped['sex'] == 2]
+    dams.loc[:,'sire_count'] = dams.groupby('sire')['sire'].transform('count')
+    sires = dams[['sire', 'sire_count']]
+    sires.columns = ['id', 'daughters']
+    sires = sires.drop_duplicates(subset=['id'])
+
+    #Merging with saman dataframe so sires have their daughter count
+    longdf = pd.merge(left=longdf, right=sires, on='id', how='outer')
+    #Merging with pedigree to see bullno and farm id
+    longdf = pd.merge(left=longdf, right=ped[['id','sex','bullno', 'name', 'farm']], on='id')
+
+    # ----------------------------------------------------
+    #This creates an excel file with bulls from Nautstöðin á Hesti with their
+    #fertility EBVs
+    # ----------------------------------------------------
+    nautastod = longdf.loc[(longdf['bullno'] > 0)]
+    #Sorting the dataframe by birthyear and nautastöðvarnúmer
+    nautastod = nautastod.sort_values(by=['BY','bullno'],ascending=False)
+    #Correct order of columns for excel file
+    nautastod = pd.merge(left=nautastod, right=unscaledlong, on='id', how='left')
+    nautastodwrite = nautastod.loc[(nautastod['farm'] == 'Nautastöðin Hesti')]
+    nautastodwrite = nautastodwrite[[
+        'id','name', 'bullno','daughters',
+        'L1','L2','L3','offlong1','offlong2','offlong3','ending', 'no_daughters_ending', 'L1x','L2x','L3x']]
+    #Rename the traits for excel file
+    # nautastod.columns = ['Einstaklingsnúmer','Nafn', 'Nautastöðvarnúmer','Fjöldi dætra',
+    #     'Mjalt1 (ICF1_40%/IFL1_60%)','Mjalt2 (ICF2_40%/IFL2_60%)','Mjalt3 (ICF3_40%/IFL3_60%)',
+    #     'CR0','ICF','IFL', 'Ný frjósemiseinkunn', 'Dætur með mæl. kvígur', 'Dætur með mæl. mjalt1',
+    #     'Dætur með mæl. mjalt2', 'Dætur með mæl. mjalt3' ]
+    #Creating the excel file
+    # nautastodwrite.to_excel('../results/endingnaut20211201.xlsx', index=False, header=True)
+
+
+
+    longdf['BY'] = (longdf.id.astype(str).str[:4]).astype(int)
+    longdf1990 = longdf.loc[(longdf['BY'] >= 1990 )]
+    longdf1990 = pd.merge(left=longdf1990, right=unscaledlong, on='id', how='left')
+    argangarlong = (longdf1990.groupby('BY')['L1','L2','L3','L1x','L2x','L3x'
+        ].mean()).reset_index()
+
+
+    nautastod['BY'] = (nautastod.id.astype(str).str[:4]).astype(int)
+    nautastodoldend = nautastod[(nautastod['no_daughters_ending'] > 0) ] #only bulls with old ending to plot line
+    nautastod = nautastod[(nautastod['offlong1'] > 0) ] #only bulls with daugters for L1 to plot
+    argangarlongnautastod = (nautastod.groupby('BY')['L1','L2','L3','L1x','L2x','L3x','ending'
+        ].mean()).reset_index()
+
+    ownobs_long = pd.merge(left=ownobs_long['id'], right=longdf, on='id')
+    ownobs_long['BY'] = (ownobs_long.id.astype(str).str[:4]).astype(int)
+    ownobs_long = pd.merge(left=ownobs_long, right=unscaledlong, on='id', how='left')
+    argangarlongown = (ownobs_long.groupby('BY')['L1','L2','L3','L1x','L2x','L3x'
+        ].mean()).reset_index()
+
+    print(argangarlongown)
+
+
+    def rargangar(x):
+        df0 = nautastodoldend.loc[nautastodoldend['BY'] == x]
+        L1_g = df0['L1'].corr(df0['ending'])
+        L2_g = df0['L2'].corr(df0['ending'])
+        L3_g = df0['L3'].corr(df0['ending'])
+
+
+        df = pd.DataFrame({x: [L1_g,L2_g,L3_g]
+                             }, index=['L1_g', 'L2_g', 'L3_g'])
+        df = df.reset_index()
+        return df
+
+    r_2007 = rargangar(2007)
+    r_2008 = rargangar(2008)
+    r_2009 = rargangar(2009)
+    r_2010 = rargangar(2010)
+    r_2011 = rargangar(2011)
+    r_2012 = rargangar(2012)
+    r_2013 = rargangar(2013)
+    r_2014 = rargangar(2014)
+    r_2015 = rargangar(2015)
+
+
+    r_ar = pd.merge(left=r_2007, right=r_2008, on='index')
+
+    r_ar = pd.merge(left=r_ar, right=r_2009, on='index')
+    r_ar = pd.merge(left=r_ar, right=r_2010, on='index')
+    r_ar = pd.merge(left=r_ar, right=r_2011, on='index')
+    r_ar = pd.merge(left=r_ar, right=r_2012, on='index')
+    r_ar = pd.merge(left=r_ar, right=r_2013, on='index')
+    r_ar = pd.merge(left=r_ar, right=r_2014, on='index')
+    r_ar = pd.merge(left=r_ar, right=r_2015, on='index')
+
+    r_ar = r_ar.transpose()
+    # r_ar = r_ar.loc[1:9,:]
+    print(r_ar)
+
+    # ----------------------------------------------------
+    #SCALED PLOT
+    # ----------------------------------------------------
+    fig, ((ax1, ax2, ax3, ax4),
+        (ax5, ax6, ax7, ax8),
+        ( ax9, ax10 ,ax11, ax12))  = plt.subplots(3,4, sharey=True)
+
+    plottingmean(ax1,longdf1990,'L1','Skalaðar einkunnir','Ný ending 1')
+    plottingmean(ax1,longdf1990,'L2','Skalaðar einkunnir','Ný ending 2')
+    plottingmean(ax1,longdf1990,'L3','Skalaðar einkunnir','Ný ending 3')
+    ax1.set_title('Meðalkynbótamat árganga fyrir nýja endingu, allir gripir', fontsize=10, fontweight ="bold")
+    #This figure shows regression
+    plottingmeansns(ax2,argangarlong,'BY','L1','','Ný ending 1')
+    plottingmeansns(ax3,argangarlong,'BY','L2','','Ný ending 2')
+    plottingmeansns(ax4,argangarlong,'BY','L2','','Ný ending 3')
+    ax2.set_title('Aðhvarf á meðalkynbótamat árganga L1, allir gripir', fontsize=10, fontweight ="bold")
+    ax3.set_title('Aðhvarf á meðalkynbótamat árganga L2, allir gripir', fontsize=10, fontweight ="bold")
+    ax4.set_title('Aðhvarf á meðalkynbótamat árganga L3, allir gripir', fontsize=10, fontweight ="bold")
+
+
+    plottingmean(ax5,nautastod,'L1','Skalaðar einkunnir','Ný ending 1')
+    plottingmean(ax5,nautastod,'L2','Skalaðar einkunnir','Ný ending 2')
+    plottingmean(ax5,nautastod,'L3','Skalaðar einkunnir','Ný ending 3')
+    plottingmean(ax5,nautastodoldend,'ending','Skalaðar einkunnir','Gamla ending')
+    ax5.set_title('Meðalkynbótamat árganga fyrir nýja endingu, nautastöð', fontsize=10, fontweight ="bold")
+
+    #This figure shows regression
+    plottingmeansns(ax6,argangarlongnautastod,'BY','L1','','Ný ending 1')
+    plottingmeansns(ax7,argangarlongnautastod,'BY','L2','','Ný ending 2')
+    plottingmeansns(ax8,argangarlongnautastod,'BY','L2','','Ný ending 3')
+    ax6.set_title('Aðhvarf á meðalkynbótamat árganga L1, nautastöð', fontsize=10, fontweight ="bold")
+    ax7.set_title('Aðhvarf á meðalkynbótamat árganga L2, nautastöð', fontsize=10, fontweight ="bold")
+    ax8.set_title('Aðhvarf á meðalkynbótamat árganga L3, nautastöð', fontsize=10, fontweight ="bold")
+
+    plottingmean(ax9,ownobs_long,'L1','Skalaðar einkunnir','Ný ending 1')
+    plottingmean(ax9,ownobs_long,'L2','Skalaðar einkunnir','Ný ending 2')
+    plottingmean(ax9,ownobs_long,'L3','Skalaðar einkunnir','Ný ending 3')
+    ax9.set_title('Meðalkynbótamat árganga fyrir nýja endingu, eigin mæl.', fontsize=10, fontweight ="bold")
+    #This figure shows regression
+    plottingmeansns(ax10,argangarlongown,'BY','L1','','Ný ending 1')
+    plottingmeansns(ax11,argangarlongown,'BY','L2','','Ný ending 2')
+    plottingmeansns(ax12,argangarlongown,'BY','L2','','Ný ending 3')
+    ax10.set_title('Aðhvarf á meðalkynbótamat árganga L1, eigin mæl.', fontsize=10, fontweight ="bold")
+    ax11.set_title('Aðhvarf á meðalkynbótamat árganga L2, eigin mæl.', fontsize=10, fontweight ="bold")
+    ax12.set_title('Aðhvarf á meðalkynbótamat árganga L3, eigin mæl.', fontsize=10, fontweight ="bold")
+
+    plt.subplots_adjust(left=0.05, bottom=0.11, right=0.96, top=0.88, wspace=0.05, hspace=0.42)
+
+    # ----------------------------------------------------
+    #UN-SCALED PLOT
+    # ----------------------------------------------------
+    xticks = [2000,2002,2004,2006,2008,2010,2012,2014,2016,2018,2020]
+    def plottingmeanx(axes,df,trait,ylabel,name):
+        axes.set_xticks(xticks)
+        axes.set_xticklabels(xticks, rotation=90)
+        axes.plot(df.groupby('BY')[trait].mean(), label=name, marker='.')
+        axes.legend()
+        axes.set_ylabel(ylabel)
+        axes.grid(axis='y')
+        axes.set_xlim(2000,2020)
+
+    def plottingmeansnsx(axes,df,x,y,ylabel,name):
+        sns.regplot(x=x, y=y, data=df, ax=axes, label=name)
+        axes.set_xticks(xticks)
+        axes.set_xticklabels(xticks, rotation=90)
+        axes.legend()
+        axes.set_ylabel(ylabel)
+        axes.grid(axis='y')
+        axes.set_xlim(2000,2020)
+        result = sm.ols(formula= f'{x} ~ {y}', data=df).fit()
+        params = pd.DataFrame(result.params)
+        slope = params.loc[params.index == y]
+        # axes.set_title(f'{(params.loc[params.index == y].astype(str))},rsquared = {result.rsquared:.2f} ', fontsize=8)
+        axes.annotate(f"{params.loc[params.index == y]}",xy = (2006,-5))
+        axes.annotate(f"rsquared = {result.rsquared:.2f}",xy = (2006,-8))
+
+    fig, ((ax1, ax2, ax3, ax4),
+        (ax5, ax6, ax7, ax8),
+        ( ax9, ax10 ,ax11, ax12))  = plt.subplots(3,4, sharey=True)
+
+    plottingmeanx(ax1,longdf1990,'L1x','DMU5 einkunnir','Ný ending 1')
+    plottingmeanx(ax1,longdf1990,'L2x','DMU5 einkunnir','Ný ending 2')
+    plottingmeanx(ax1,longdf1990,'L3x','DMU5 einkunnir','Ný ending 3')
+    ax1.set_title('Meðalkynbótamat árganga fyrir nýja endingu, allir gripir', fontsize=10, fontweight ="bold")
+    #This figure shows regression
+    plottingmeansnsx(ax2,argangarlong,'BY','L1x','','Ný ending 1')
+    plottingmeansnsx(ax3,argangarlong,'BY','L2x','','Ný ending 2')
+    plottingmeansnsx(ax4,argangarlong,'BY','L2x','','Ný ending 3')
+    ax2.set_title('Aðhvarf á meðalkynbótamat árganga L1, allir gripir', fontsize=10, fontweight ="bold")
+    ax3.set_title('Aðhvarf á meðalkynbótamat árganga L2, allir gripir', fontsize=10, fontweight ="bold")
+    ax4.set_title('Aðhvarf á meðalkynbótamat árganga L3, allir gripir', fontsize=10, fontweight ="bold")
+
+    plottingmeanx(ax5,nautastod,'L1x','DMU5 einkunnir','Ný ending 1')
+    plottingmeanx(ax5,nautastod,'L2x','DMU5 einkunnir','Ný ending 2')
+    plottingmeanx(ax5,nautastod,'L3x','DMU5 einkunnir','Ný ending 3')
+    ax5.set_title('Meðalkynbótamat árganga fyrir nýja endingu, nautastöð', fontsize=10, fontweight ="bold")
+    #This figure shows regression
+    plottingmeansnsx(ax6,argangarlongnautastod,'BY','L1x','','Ný ending 1')
+    plottingmeansnsx(ax7,argangarlongnautastod,'BY','L2x','','Ný ending 2')
+    plottingmeansnsx(ax8,argangarlongnautastod,'BY','L2x','','Ný ending 3')
+    ax6.set_title('Aðhvarf á meðalkynbótamat árganga L1, nautastöð', fontsize=10, fontweight ="bold")
+    ax7.set_title('Aðhvarf á meðalkynbótamat árganga L2, nautastöð', fontsize=10, fontweight ="bold")
+    ax8.set_title('Aðhvarf á meðalkynbótamat árganga L3, nautastöð', fontsize=10, fontweight ="bold")
+
+    plottingmeanx(ax9,ownobs_long,'L1x','DMU5 einkunnir','Ný ending 1')
+    plottingmeanx(ax9,ownobs_long,'L2x','DMU5 einkunnir','Ný ending 2')
+    plottingmeanx(ax9,ownobs_long,'L3x','DMU5 einkunnir','Ný ending 3')
+    ax9.set_title('Meðalkynbótamat árganga fyrir nýja endingu, eigin mæl.', fontsize=10, fontweight ="bold")
+    #This figure shows regression
+    plottingmeansnsx(ax10,argangarlongown,'BY','L1x','','Ný ending 1')
+    plottingmeansnsx(ax11,argangarlongown,'BY','L2x','','Ný ending 2')
+    plottingmeansnsx(ax12,argangarlongown,'BY','L2x','','Ný ending 3')
+    ax10.set_title('Aðhvarf á meðalkynbótamat árganga L1, eigin mæl.', fontsize=10, fontweight ="bold")
+    ax11.set_title('Aðhvarf á meðalkynbótamat árganga L2, eigin mæl.', fontsize=10, fontweight ="bold")
+    ax12.set_title('Aðhvarf á meðalkynbótamat árganga L3, eigin mæl.', fontsize=10, fontweight ="bold")
+
+    plt.subplots_adjust(left=0.05, bottom=0.11, right=0.96, top=0.88, wspace=0.05, hspace=0.42)
+
+
+
+    # fig, (ax1)  = plt.subplots(1)
+    #
+    # ax1.plot(r_ar.index, r_ar['0'])
+    # ax1.plot(r_ar.index, r_ar['1'])
+    # ax1.plot(r_ar.index, r_ar['2'])
+
+    plt.show()
+
+else:
+    print('Longevity results not collected')
+
+
+
 #

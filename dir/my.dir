@@ -20,7 +20,7 @@ $ANALYSE 12 2 0 0
 $DATA  ASCII (5,11,-98) ../../../dmu_data/tdm1.dat
 
 $VARIABLE
-ID bu-ar htd cac burdman
+ID bu-ar htd cac tdmonth
 lp1 lp2 lp3 lp4 wil mjolk1 mjolk2 mjolk3 dim herd month
 
 $MODEL
