@@ -1,0 +1,54 @@
+#**********************************************************************
+# This is the file DMU1 read from standard input                      *
+#                                                                     *
+# Lines starting with # are lines with information's                  *
+# on how and what to fill in.                                         *
+#                                                                     *
+# Lines starting with $ are KEYWORD lines used to locate              *
+# information's in this file.                                         *
+#                                                                     *
+#**********************************************************************
+
+$COMMENT
+Testing of longevity variences
+
+$ANALYSE 12 2 0 0
+
+$DATA  ASCII (5,3,-999) ../../../dmu_data/dmu_long.txt
+
+
+$VARIABLE
+code_id AGEc_1 CYM1 h5y herdCY1
+L1 L2 L3
+
+
+$MODEL
+3
+0
+0
+0
+1 0 5 2 3 4 5 1
+2 0 5 2 3 4 5 1
+3 0 5 2 3 4 5 1
+1 1
+1 1
+1 1
+0
+0
+0
+0
+
+
+#----------------------------------------------------------------------
+
+$VAR_STR  1 PED 6 RANDOM 1.0 ASCII ../../../dmu_data/dmu_ped.txt
+
+
+$PRIOR long.par
+
+
+
+
+$DMU5
+30000
+1e-9
