@@ -22,11 +22,12 @@ from kynbotamat_module import plottingmean
 #Option to create observations files for DMU, 0 means skip and 1 means create
 preptdm = 0
 
-fertilitydmu = 1
-confdmu = 1
-rankorderdmu = 1
+fertilitydmu = 0
+confdmu = 0
+rankorderdmu = 0
+longdmu = 0
 
-prepfordmu = 0
+prepfordmu = 1
 
 plottdm = 0
 #---------------------------------------------------------------------------
@@ -122,6 +123,9 @@ confobs_columns = ['code_id','HdomsY','lact','AGEc_1',
 
 rankorderobs = '../dmu_data/dmu_rankorder.txt'
 rankorderobs_columns = ['code_id', 'year', 'mjaltarod', 'gaedarod']
+
+longobs = '../dmu_data/dmu_long.txt'
+longobs_columns = ['code_id','AGEc_1','CYM1','h5y','herdCY1','L1','L2','L3']
 #---------------------------------------------------------------------------
 
 #---------------------------------------------------------------------------
@@ -142,7 +146,7 @@ def check(df,trait1,trait2,trait3,trait4,heifer,first,second,third,newcolumn, ou
 
 #-------------------------------------------------------------
 #Reading in ranrkodi to replace IDs with code ids, radnrkodi is created by preptdm.f
-if (fertilitydmu == 1) | (confdmu == 1) | (rankorderdmu == 1) | (plottdm == 1) :
+if (fertilitydmu == 1) | (confdmu == 1) | (rankorderdmu == 1) | (longdmu == 1) | (plottdm == 1) :
     radnrkodi = readingfilefwf(radnrkodifile,radnrkodi_columns,widths_radnrkodi)
     radnrkodi = radnrkodi.drop(
         ['stada','norec','fix1','fix2', 'fix3','sex'], axis = 1)
@@ -762,6 +766,163 @@ else:
 
 
 #---------------------------------------------------------------------------
+#Start of longevity  program
+#---------------------------------------------------------------------------
+if longdmu == 1:
+
+    #Cow file from fertility evaluation read
+    cows_df = readfilecsv(cowfile,cowfile_columns, '\t')
+
+    #Dates formatted
+    cows_df[['birth','death','calv1','calv2','calv3','calv4']] = cows_df[
+    ['birth','death','calv1','calv2','calv3','calv4']
+    ].apply(lambda x: pd.to_datetime(x, format='%Y%m%d'))
+
+    #Checking if calving are OK
+    cows_df['check'] = check(cows_df,'calv1','calv2','calv3','calv4',0,0,0,0,'no_calv',0)
+    cows_df['check'] = check(cows_df,'calv1','calv2','calv3','calv4',1,0,0,0,'no_calv',1)
+    cows_df['check'] = check(cows_df,'calv1','calv2','calv3','calv4',1,1,0,0,'no_calv',2)
+    cows_df['check'] = check(cows_df,'calv1','calv2','calv3','calv4',1,1,1,0,'no_calv',3)
+    cows_df['check'] = check(cows_df,'calv1','calv2','calv3','calv4',1,1,1,1,'no_calv',4)
+
+    #Faulty obs. collected and marked as 9
+    cows_df.loc[
+    (cows_df['no_calv'] != 0) & (cows_df['no_calv'] != 1) & (cows_df['no_calv'] != 2)
+    & (cows_df['no_calv'] != 3) & (cows_df['no_calv'] != 4),
+    'no_calv'] = 9
+
+    #Cows only allowed if no of calving and check has registered
+    cows_df = cows_df.loc[(cows_df['no_calv'].notnull().astype(int) == 1) & (cows_df['check'].notnull().astype(int) == 1)]
+
+    #Cows only allowed if they have dates for birth and first caving
+    cows_df = cows_df.loc[(cows_df['birth'].notnull().astype(int) == 1)]
+    cows_df = cows_df.loc[(cows_df['calv1'].notnull().astype(int) == 1)]
+
+    #Find age at first calving
+    cows_df.loc[:,'AGEc_1'] = (cows_df['calv1'] - cows_df['birth']).dt.days
+    #Only allowed within a certain range (from NAV)
+    cows_df.loc[(cows_df['AGEc_1'] < 450) | (cows_df['AGEc_1'] > 1280),'wrong'] = 'a'
+    cows_df = cows_df.loc[(cows_df['wrong'].notnull().astype(int) == 0)]
+
+    #Finding in which lactation a culling has occured
+    cows_df.loc[
+    (cows_df['no_calv'] == 0) & (cows_df['death'].notnull().astype(int) == 1), 'culled'] = 0
+    cows_df.loc[
+    (cows_df['no_calv'] == 1) & (cows_df['death'].notnull().astype(int) == 1), 'culled'] = 1
+    cows_df.loc[
+    (cows_df['no_calv'] == 2) & (cows_df['death'].notnull().astype(int) == 1), 'culled'] = 2
+    cows_df.loc[
+    (cows_df['no_calv'] == 3) & (cows_df['death'].notnull().astype(int) == 1), 'culled'] = 3
+
+    #Creation of L1, L2 and L3
+    cows_df.loc[(cows_df['calv2'].notnull().astype(int) == 1),'L1'] = (cows_df['calv2'] - cows_df['calv1']).dt.days
+    cows_df.loc[(cows_df['L1'].notnull().astype(int) == 1),'L1'] = 365 #If cow calved again, set to max value
+    #If cow is culled then days from calv 1 to culling
+    cows_df.loc[(cows_df['culled'] == 1),'L1'] = (cows_df['death'] - cows_df['calv1']).dt.days
+    #If more then max days, set to max days
+    cows_df.loc[(cows_df['L1'] > 365), 'L1'] = 365
+
+    cows_df.loc[(cows_df['calv3'].notnull().astype(int) == 1),'L2'] = (cows_df['calv3'] - cows_df['calv1']).dt.days
+    cows_df.loc[(cows_df['L2'].notnull().astype(int) == 1),'L2'] = 730
+    cows_df.loc[(cows_df['culled'] == 2),'L2'] = (((cows_df['death'] - cows_df['calv2']).dt.days) + cows_df['L1'])
+    cows_df.loc[(cows_df['L2'] > 730), 'L2'] = 730
+
+    cows_df.loc[(cows_df['calv4'].notnull().astype(int) == 1),'L3'] = (cows_df['calv4'] - cows_df['calv1']).dt.days
+    cows_df.loc[(cows_df['L3'].notnull().astype(int) == 1),'L3'] = 1095
+    cows_df.loc[(cows_df['culled'] == 3),'L3'] = (((cows_df['death'] - cows_df['calv3']).dt.days) + cows_df['L2'])
+    cows_df.loc[(cows_df['L3'] > 1095), 'L3'] = 1095
+
+    #Check the collectiondate if cow has been able to collect values for traits
+    cows_df.loc[
+        (cows_df['calv1'].notnull().astype(int) == 1) &
+        (cows_df['death'].notnull().astype(int) == 0) &
+        ((collectiondate - cows_df['calv1']).dt.days > 365)
+        ,'L1'] = 365
+
+    cows_df.loc[
+        (cows_df['calv2'].notnull().astype(int) == 1) &
+        (cows_df['death'].notnull().astype(int) == 0) &
+        ((collectiondate - cows_df['calv2']).dt.days > 365)
+        ,'L2'] =730
+
+    cows_df.loc[
+        (cows_df['calv3'].notnull().astype(int) == 1) &
+        (cows_df['death'].notnull().astype(int) == 0) &
+        ((collectiondate - cows_df['calv3']).dt.days > 365)
+        ,'L3'] =1095
+
+    #Only cows allowed if they have L1 obs
+    cows_df = cows_df.loc[(cows_df['L1'].notnull().astype(int) == 1)]
+
+    #An extra check for cows and their must have observations
+    cows_df = cows_df.loc[(cows_df['L1'] > 0)]
+    cows_df = cows_df.loc[(cows_df['L2'] > 0) | (cows_df['L2'].notnull().astype(int) == 0) ]
+    cows_df = cows_df.loc[(cows_df['L3'] > 0) | (cows_df['L3'].notnull().astype(int) == 0)]
+
+    #Set age to months
+    cows_df['AGEc_1'] = (cows_df['AGEc_1']/30.5).astype(int)
+
+    #Create fixed effect and count in groups
+    cows_df['age1'] = cows_df.groupby('AGEc_1')['AGEc_1'].transform('count')
+    cows_df = cows_df[(cows_df['age1'] > 2)]
+
+    #Collect years from dates to create fixed effects
+    cows_df.loc[:, 'BY'] = (cows_df['birth'].dt.strftime('%Y')).astype(int)
+    cows_df.loc[:, 'CY1'] = (cows_df['calv1'].dt.strftime('%Y')).astype(int)
+    cows_df.loc[:, 'CM1'] = (cows_df['calv1'].dt.strftime('%m')).astype(int)
+
+    #Creation of fixed effect herd * 5 year period
+    def herd5year(df,year):
+        df.loc[((df[year] >= 1994) &  (df[year] <= 1998)),'ygroup'] = 1
+        df.loc[((df[year] >= 1999) &  (df[year] <= 2003)),'ygroup'] = 2
+        df.loc[((df[year] >= 2004) &  (df[year] <= 2008)),'ygroup'] = 3
+        df.loc[((df[year] >= 2009) &  (df[year] <= 2013)),'ygroup'] = 4
+        df.loc[((df[year] >= 2014)&  (df[year] <= 2018)),'ygroup'] = 5
+        df.loc[((df[year] >= 2019)),'ygroup'] = 6
+        df.loc[:,'h5y'] = (df['herd'].astype('str') + df['ygroup'].astype('str')).astype(float).astype(int)
+        return df['h5y']
+
+    cows_df['h5y'] = herd5year(cows_df,'BY')
+    cows_df['h5y_c'] = cows_df.groupby('h5y')['h5y'].transform('count')
+    cows_df = cows_df[(cows_df['h5y_c'] > 5)]
+
+    #Create seperate df for herd year grouping
+    df = cows_df[['id','herd','CY1', 'CM1']]
+
+    df = hy_grouping('CY1', df, 'CM1', 'CYM1', df)
+    df['CYM1c'] = df.groupby('CYM1')['CYM1'].transform('count')
+    df = df[(df['CYM1c'] > 2)]
+
+    df = hy_grouping('herd', df, 'CY1', 'herdCY1', df)
+
+    #Merging into main df
+    cows_df = pd.merge(left=cows_df, right=df, on='id', how='left')
+
+    #Checking size of groups
+    cows_df['HCY1_c'] = cows_df.groupby('herdCY1')['herdCY1'].transform('count')
+    cows_df = cows_df[(cows_df['HCY1_c'] > 2)]
+
+    #Filling with -999 for DMU
+    realc = ['L1','L2','L3']
+    cows_df[realc] = cows_df[realc].fillna(-999.0)
+
+    #Getting code ids
+    cows_df = pd.merge(left=cows_df, right=radnrkodi, on='id', how='left')
+    cows_df = cows_df.sort_values(by=['code_id'])
+
+    dmu_long = cows_df[longobs_columns]
+
+    # DMU datafile
+    dmu_long.to_csv(longobs, index=False, header=False, sep=' ')
+
+    print(cows_df.iloc[80000:80015])
+    print(cows_df.info())
+    print(dmu_long.iloc[80000:80015])
+    print(dmu_long.info())
+
+else:
+    print( f'DMU longevity file not created' )
+#---------------------------------------------------------------------------
 # PART 4 - Prepping for DMU runs
 #---------------------------------------------------------------------------
 
@@ -781,7 +942,7 @@ if prepfordmu == 1:
         dirpath = f'../DMU/{year}/{trait}/dir' #copies dir files from dir folder to trait folder
         isExist = os.path.exists(dirpath)
         if not isExist:
-            shutil.copy(f'/dir/{trait}.dir', dirpath)
+            shutil.copy(f'dir/{trait}.dir', dirpath)
             print(f'{dirpath} is created!')
         else:
             print(f'{dirpath} exists!')
@@ -789,7 +950,7 @@ if prepfordmu == 1:
         parpath = f'../DMU/{year}/{trait}/{trait}.par' #copies dir files from dir folder to trait folder
         isExist = os.path.exists(parpath)
         if not isExist:
-            shutil.copy(f'/dir/{trait}.par', parpath)
+            shutil.copy(f'dir/{trait}.par', parpath)
             print(f'{parpath} is created!')
         else:
             print(f'{parpath} exists!')
@@ -820,6 +981,7 @@ if prepfordmu == 1:
     prep('fer',yearmonth)
     prep('conf',yearmonth)
     prep('rank',yearmonth)
+    prep('long',yearmonth)
 
 #---------------------------------------------------------------------------
 # PART 5 - Plotting TDM phenotypic data
