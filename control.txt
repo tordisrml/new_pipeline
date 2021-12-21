@@ -1,3 +1,4 @@
+2022jan
 6200000
 400000
 2000
@@ -7,13 +8,12 @@
 2013
 10000
 2
-'../dmu_data/tdm.csv'
+'/dmu_data/tdm.csv'
 '../from_huppa/radadurhuppu.ped'
 ../from_huppa/Pgree_20210909.txt
 2017
 100
 10
-2022jan
 ../tdmfile/tdmfromegill.csv
 ../from_huppa/tdm20211203.csv
 ../from_huppa/Kynbotfrjosemi2_27163.csv
@@ -21,7 +21,6 @@
 20210913
 ../from_huppa/Skopulag_27562.txt
 ../from_huppa/Mjaltaathugun_26464.txt
-../results/branda.20212202
 
 1. Maximum number of records, records excluded in data reading not included.
 2. Maximum number of cows

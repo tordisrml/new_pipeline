@@ -1,7 +1,4 @@
-#This is a program to write files to be used by DMU for
-    #-Fertility
-    #-Conformation
-    #-Rank order
+#This program prepares DMU runs for all traits
 #---------------------------------------------------------------------------
 #Thordis Thorarinsdottir 2021
 
@@ -19,17 +16,23 @@ from kynbotamat_module import readingfilefwf
 from kynbotamat_module import hy_grouping
 from kynbotamat_module import plottingmean
 
-#Option to create observations files for DMU, 0 means skip and 1 means create
-preptdm = 0
+#Options in program!
 
+#Creating DMU trait files
+prepfordmu = 0
+
+preptdm = 0 #run preptdm.f program
+
+#Create DMU datafiles for these traits
 fertilitydmu = 0
 confdmu = 0
 rankorderdmu = 0
 longdmu = 0
 
-prepfordmu = 1
-
+#Plotting tdm1 datafile to check if OK
 plottdm = 0
+
+accuracytdm = 1
 #---------------------------------------------------------------------------
 #File with information for program!
 control = pd.read_csv(
@@ -38,6 +41,84 @@ control = pd.read_csv(
     names=['control']
     )
 #---------------------------------------------------------------------------
+yearmonth = control.loc[0,'control']  #year and month of breeding value estamation
+#---------------------------------------------------------------------------
+# PART 1 - Prepping for DMU runs
+#---------------------------------------------------------------------------
+
+#Creating a new Year-month folder for breeding evaluation. From now on all
+#files will be gathered there
+def createpath(x):
+    path = x #creation of a dir for year.month of BV estimation
+    isExist = os.path.exists(path) #checks first if dir already exists
+    if not isExist:
+        os.makedirs(path);
+        print(f'{path} is created!')
+    else:
+        print(f'{path} exists!')
+
+createpath(f'../{yearmonth}')
+createpath(f'../{yearmonth}/dmu_data')
+createpath(f'../{yearmonth}/results')
+createpath(f'../{yearmonth}/figures')
+
+if prepfordmu == 1:
+    #---------------------------------------------------------------------------
+    #This function creates a directory for current DMU run
+    #---------------------------------------------------------------------------
+    def prep(trait,year):
+        path = f'../{year}/DMU/{trait}' #creation of a dir for year.month of BV estimation
+        isExist = os.path.exists(path) #checks first if dir already exists
+        if not isExist:
+            os.makedirs(path);
+            print(f'{path} is created!')
+        else:
+            print(f'{path} exists!')
+
+        dirpath = f'../{year}/DMU/{trait}/dir' #copies dir files from dir folder to trait folder
+        isExist = os.path.exists(dirpath)
+        if not isExist:
+            shutil.copy(f'dir/{trait}.dir', dirpath)
+            print(f'{dirpath} is created!')
+        else:
+            print(f'{dirpath} exists!')
+
+        parpath = f'../{year}/DMU/{trait}/{trait}.par' #copies dir files from dir folder to trait folder
+        isExist = os.path.exists(parpath)
+        if not isExist:
+            shutil.copy(f'dir/{trait}.par', parpath)
+            print(f'{parpath} is created!')
+        else:
+            print(f'{parpath} exists!')
+
+        path = f'../{year}/DMU/{trait}/dmu1.sh' #copies dmu1.sh trait folder
+        isExist = os.path.exists(path)
+        if not isExist:
+            shutil.copy(f'dmu1.sh', f'../{year}/DMU/{trait}')
+            print(f'{path} is created!')
+        else:
+            print(f'{path} exists!')
+
+        path = f'../{year}/DMU/{trait}/dmu5.sh' #copies dmu5.sh trait folder
+        isExist = os.path.exists(path)
+        if not isExist:
+            shutil.copy(f'dmu5.sh', f'../{year}/DMU/{trait}')
+            print(f'{path} is created!')
+        else:
+            print(f'{path} exists!')
+
+    #yearmonth variable is read from info file
+    prep('my',yearmonth)
+    prep('fy',yearmonth)
+    prep('py',yearmonth)
+    prep('fp',yearmonth)
+    prep('pp',yearmonth)
+    prep('scs',yearmonth)
+    prep('fer',yearmonth)
+    prep('conf',yearmonth)
+    prep('rank',yearmonth)
+    prep('long',yearmonth)
+
 
 #---------------------------------------------------------------------------
 # PART 1 - SORT PEDIGREE, MERGE TDM FILES AND RUN PREP_TDM IN SHELL!
@@ -46,11 +127,11 @@ control = pd.read_csv(
 if preptdm == 1 :
     print('Part 1 of program')
     #Name of pedigree file
-    pedigreefile = control.loc[11,'control']
-    sortedped = control.loc[10,'control']
+    pedigreefile = control.loc[12,'control']
+    sortedped = control.loc[11,'control']
     oldtdm = control.loc[16,'control']
     newtdm = control.loc[17,'control']
-    tdmfile = control.loc[9,'control']
+    tdmfile = f'../{yearmonth}{control.loc[9,"control"]}'
 
     sortingped = f'sort +0.0 -0.15 {pedigreefile} -o {sortedped}'
 
@@ -62,7 +143,8 @@ if preptdm == 1 :
     subprocess.call(combinetdm, shell=True)
     print('Combining TDM files in shell done')
 
-    subprocess.call('gfortran -o preptdm preptdm_5.f', shell=True)
+    subprocess.check_output('gfortran -o preptdm preptdm_6.f', shell=True)
+
     print('Compiling preptdm.f done')
 
     subprocess.call('./preptdm', shell=True)
@@ -74,10 +156,9 @@ else:
 #---------------------------------------------------------------------------
 #PART 2 - INFORMATION FOR PROGRAM
 #---------------------------------------------------------------------------
-yearmonth = control.loc[15,'control']  #year and month of breeding value estamation
 
 #Radnrkodifile
-radnrkodifile = '../dmu_data/radnrkodi' #Created by prep_tdm.f
+radnrkodifile = f'../{yearmonth}/dmu_data/radnrkodi' #Created by prep_tdm.f
 #Format of radnrkodi file created by prep_tdm.f
 radnrkodi_columns = ['id','code_id','stada','norec','fix1','fix2', 'fix3','sex']
 widths_radnrkodi = [15,9,3,3,6,6,6,2]
@@ -109,22 +190,22 @@ widths_rankorderfile = [38]
 
 #---------------------------------------------------------------------------
 #Observationfiles used for DMU created by this program
-fertilityobs = '../dmu_data/dmu_fertility.txt'
+fertilityobs = f'../{yearmonth}/dmu_data/dmu_fertility.txt'
 fertilityobs_columns = ['code_id','HBY','HC1','HC2','HC3','IYM0','IYM1','IYM2',
     'IYM3','AGEi_h','AGEc_1','AGEc_2','AGEc_3','tech_h',
     'CRh','ICF1','ICF2','ICF3','IFL1','IFL2','IFL3']
 
-confobs = '../dmu_data/dmu_conformation.txt'
+confobs = f'../{yearmonth}/dmu_data/dmu_conformation.txt'
 confobs_columns = ['code_id','HdomsY','lact','AGEc_1',
     'boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahalli', 'malabratti',
     'stada_haekla_hlid', 'stada_haekla_aftan', 'klaufhalli', 'jugurfesta',
     'jugurband', 'jugurdypt', 'spenalengd', 'spenathykkt', 'spenastada',
     'mjaltir', 'skap']
 
-rankorderobs = '../dmu_data/dmu_rankorder.txt'
+rankorderobs = f'../{yearmonth}/dmu_data/dmu_rankorder.txt'
 rankorderobs_columns = ['code_id', 'year', 'mjaltarod', 'gaedarod']
 
-longobs = '../dmu_data/dmu_long.txt'
+longobs = f'../{yearmonth}/dmu_data/dmu_long.txt'
 longobs_columns = ['code_id','AGEc_1','CYM1','h5y','herdCY1','L1','L2','L3']
 #---------------------------------------------------------------------------
 
@@ -719,7 +800,6 @@ if confdmu == 1:
     print(dmu_conf.iloc[80000:80015])
     print(dmu_conf.info())
 
-
 else:
     print( f'DMU conformation file not created' )
 
@@ -757,9 +837,8 @@ if rankorderdmu == 1:
     # DMU datafile
     dmurankorder.to_csv(rankorderobs, index=False, header=False, sep=' ')
 
-    print(df.iloc[80000:80015])
-    print(df.info())
-
+    print(dmurankorder.iloc[80000:80015])
+    print(dmurankorder.info())
 
 else:
     print( f'DMU rank order file not created' )
@@ -915,115 +994,70 @@ if longdmu == 1:
     # DMU datafile
     dmu_long.to_csv(longobs, index=False, header=False, sep=' ')
 
-    print(cows_df.iloc[80000:80015])
-    print(cows_df.info())
     print(dmu_long.iloc[80000:80015])
     print(dmu_long.info())
 
 else:
     print( f'DMU longevity file not created' )
-#---------------------------------------------------------------------------
-# PART 4 - Prepping for DMU runs
-#---------------------------------------------------------------------------
-
-if prepfordmu == 1:
-    #---------------------------------------------------------------------------
-    #This function creates a directory for current DMU run
-    #---------------------------------------------------------------------------
-    def prep(trait,year):
-        path = f'../DMU/{year}/{trait}' #creation of a dir for year.month of BV estimation
-        isExist = os.path.exists(path) #checks first if dir already exists
-        if not isExist:
-            os.makedirs(path);
-            print(f'{path} is created!')
-        else:
-            print(f'{path} exists!')
-
-        dirpath = f'../DMU/{year}/{trait}/dir' #copies dir files from dir folder to trait folder
-        isExist = os.path.exists(dirpath)
-        if not isExist:
-            shutil.copy(f'dir/{trait}.dir', dirpath)
-            print(f'{dirpath} is created!')
-        else:
-            print(f'{dirpath} exists!')
-
-        parpath = f'../DMU/{year}/{trait}/{trait}.par' #copies dir files from dir folder to trait folder
-        isExist = os.path.exists(parpath)
-        if not isExist:
-            shutil.copy(f'dir/{trait}.par', parpath)
-            print(f'{parpath} is created!')
-        else:
-            print(f'{parpath} exists!')
-
-        path = f'../DMU/{year}/{trait}/dmu1.sh' #copies dmu1.sh trait folder
-        isExist = os.path.exists(path)
-        if not isExist:
-            shutil.copy(f'../DMU/dmu1.sh', f'../DMU/{year}/{trait}')
-            print(f'{path} is created!')
-        else:
-            print(f'{path} exists!')
-
-        path = f'../DMU/{year}/{trait}/dmu5.sh' #copies dmu5.sh trait folder
-        isExist = os.path.exists(path)
-        if not isExist:
-            shutil.copy(f'../DMU/dmu5.sh', f'../DMU/{year}/{trait}')
-            print(f'{path} is created!')
-        else:
-            print(f'{path} exists!')
-
-    #yearmonth variable is read from info file
-    prep('my',yearmonth)
-    prep('fy',yearmonth)
-    prep('py',yearmonth)
-    prep('fp',yearmonth)
-    prep('pp',yearmonth)
-    prep('scs',yearmonth)
-    prep('fer',yearmonth)
-    prep('conf',yearmonth)
-    prep('rank',yearmonth)
-    prep('long',yearmonth)
 
 #---------------------------------------------------------------------------
 # PART 5 - Plotting TDM phenotypic data
 #---------------------------------------------------------------------------
 
-# if plottdm == 1:
-#
-#     tdm1file = '../dmu_data/tdm1.dat'
-#
-#     tdm1file_columns = ['code_id','hy','htd','agec','m','lp1','lp2','lp3','lp4','wil',
-#         'my1','my2','my3','dim','herd','calvm']
-#     widths_tdm1file = [8,8,8,5,5,8,9,9,9,9,8,8,8,9,8,8]
-#
-#     tdm1 = readingfilefwf(tdm1file,tdm1file_columns,widths_tdm1file)
-#
-#     tdm1 = pd.merge(left=tdm1, right=radnrkodi[['id','code_id']], on='code_id', how='left')
-#
-#     tdm1['BY'] = (tdm1.id.astype(str).str[:4]).astype(int)
-#
-#     tdm11 = tdm1.loc[(tdm1['my1'] > 0)]
-#     tdm12 = tdm1.loc[(tdm1['my2'] > 0)]
-#     tdm13 = tdm1.loc[(tdm1['my3'] > 0)]
-#
-#
-#     tdm11.loc[:, 'totalmy1'] = tdm11.groupby('code_id')['my1'].transform('sum')
-#     tdm12.loc[:, 'totalmy2'] = tdm12.groupby('code_id')['my2'].transform('sum')
-#     tdm13.loc[:, 'totalmy3'] = tdm13.groupby('code_id')['my3'].transform('sum')
-#
-#
-#     print(tdm1.iloc[800000:800015])
-#     print(tdm1.info())
-#
-#     fig, (ax1) = plt.subplots(1, sharey=True)
-#
-#     plottingmean(ax1,tdm11,'totalmy1','Mjólkurmagn','Mjaltaskeið 1')
-#     plottingmean(ax1,tdm12,'totalmy2','Mjólkurmagn','Mjaltaskeið 2')
-#     plottingmean(ax1,tdm13,'totalmy3','Mjólkurmagn','Mjaltaskeið 3')
-#     ax1.set_title('Mean sum of TD yield by lact by birth year', fontsize=10, fontweight ="bold")
-#
-#     fig.set_size_inches([20, 10])
-#     plt.savefig('../figures/regressionbirthyear20211127.png')
-#
-#     plt.show()
+if plottdm == 1:
 
-#
+    tdm1file = f'../{yearmonth}/dmu_data/tdm1.dat'
+
+    tdm1file_columns = ['code_id','hy','htd','agec','m','lp1','lp2','lp3','lp4','wil',
+        'my1','my2','my3','dim','herd','calvm']
+    widths_tdm1file = [8,8,8,5,5,8,9,9,9,9,8,8,8,9,8,8]
+
+    tdm1 = readingfilefwf(tdm1file,tdm1file_columns,widths_tdm1file)
+
+    tdm1 = pd.merge(left=tdm1, right=radnrkodi[['id','code_id']], on='code_id', how='left')
+
+    tdm1['BY'] = (tdm1.id.astype(str).str[:4]).astype(int)
+
+    tdm11 = tdm1.loc[(tdm1['my1'] > 0)]
+    tdm12 = tdm1.loc[(tdm1['my2'] > 0)]
+    tdm13 = tdm1.loc[(tdm1['my3'] > 0)]
+
+
+    tdm11.loc[:, 'totalmy1'] = tdm11.groupby('code_id')['my1'].transform('sum')
+    tdm12.loc[:, 'totalmy2'] = tdm12.groupby('code_id')['my2'].transform('sum')
+    tdm13.loc[:, 'totalmy3'] = tdm13.groupby('code_id')['my3'].transform('sum')
+
+
+    print(tdm1.iloc[800000:800015])
+    print(tdm1.info())
+
+    fig, (ax1) = plt.subplots(1, sharey=True)
+
+    plottingmean(ax1,tdm11,'totalmy1','Mjólkurmagn','Mjaltaskeið 1')
+    plottingmean(ax1,tdm12,'totalmy2','Mjólkurmagn','Mjaltaskeið 2')
+    plottingmean(ax1,tdm13,'totalmy3','Mjólkurmagn','Mjaltaskeið 3')
+    ax1.set_title(f'Mean sum of TD yield by lact by birth year, {yearmonth}', fontsize=10, fontweight ="bold")
+
+    fig.set_size_inches([10, 5])
+    plt.savefig(f'../{yearmonth}/figures/tdmyieldsumcheck.png')
+
+    # plt.show()
+else:
+    print( f'TDM check plot not created' )
+
+#---------------------------------------------------------------------------
+# PART 6 - Accuracy fortran progarms
+#---------------------------------------------------------------------------
+
+if accuracytdm == 1:
+
+    subprocess.call(f'gfortran -o acc1 acctdm1.f', shell=True)
+    subprocess.call(f'gfortran -o acc2 acctdm2.f', shell=True)
+    subprocess.call(f'gfortran -o acc2fr acctdm2_fr.f', shell=True)
+
+    # subprocess.call('./acc1', shell=True)
+    subprocess.call('./acc2', shell=True)
+    subprocess.call('./acc2fr', shell=True)
+
+else:
+    print( f'No accuracy calc. done' )

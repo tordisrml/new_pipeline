@@ -11,8 +11,17 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 import statsmodels.formula.api as sm
 
-radnrkodifile = '../dmu_data/radnrkodi' #Created by prep_tdm.f
+yticks = [75,80,85,90,95,100,105,110]
+xticks = [2000,2002,2004,2006,2008,2010,2012,2014,2016,2018,2020]
 
+#---------------------------------------------------------------------------
+#File with information for program!
+control = pd.read_csv(
+    'control.txt',
+    header=None,
+    names=['control']
+    )
+#---------------------------------------------------------------------------
 #---------------------------------------------------------------------------
 #Function to read tab/space sperated files with files
 #---------------------------------------------------------------------------
@@ -116,9 +125,6 @@ def countingoff (df0,trait,traitcount, df1):
     df1 = pd.merge(left=df1, right=df[['id',traitcount]], on='id', how='outer').fillna(0, downcast='infer')
     return df1
 
-xticks = [2000,2002,2004,2006,2008,2010,2012,2014,2016,2018,2020]
-yticks = [75,80,85,90,95,100,105,110]
-
 def plottingmean(axes,df,trait,ylabel,name):
     axes.set_xticks(xticks)
     axes.set_xticklabels(xticks, rotation=90)
@@ -133,20 +139,20 @@ def plottingmeansns(axes,df,x,y,ylabel,name):
     sns.regplot(x=x, y=y, data=df, ax=axes, label=name)
     axes.set_xticks(xticks)
     axes.set_xticklabels(xticks, rotation=90)
-#    axes.set_yticks(yticks)
+    axes.set_yticks(yticks)
     axes.legend()
     axes.set_ylabel(ylabel)
     axes.grid(axis='y')
     axes.set_xlim(2000,2020)
+    axes.set_ylim(75,110)
     result = sm.ols(formula= f'{x} ~ {y}', data=df).fit()
     params = pd.DataFrame(result.params)
     slope = params.loc[params.index == y]
-    # axes.set_title(f'{(params.loc[params.index == y].astype(str))},rsquared = {result.rsquared:.2f} ', fontsize=8)
     axes.annotate(f"{params.loc[params.index == y]}",xy = (2006,82))
     axes.annotate(f"rsquared = {result.rsquared:.2f}",xy = (2006,76))
 
 
-def yieldcollect(filename,t1,t2,t3,ID, per1, per2, per3):
+def yieldcollect(filename,t1,t2,t3,ID, per1, per2, per3, pe1, pe2, pe3):
     file=filename
     LP0, LP1, LP2, LP3, Wil=[], [], [], [], []
     # Note that the data only includes milk records from dim=5 to dim=305.
@@ -169,7 +175,7 @@ def yieldcollect(filename,t1,t2,t3,ID, per1, per2, per3):
     Lfppp = Lfppp[:,5:296]
 
     a1,a2,a3,a4,b1,b2,b3,b4,c1,c2,c3,c4,ShortID = [],[],[],[],[],[],[],[],[],[],[],[],[]
-    d1,d2,d3,e1,e2,e3,f1,f2,f3, ShortIDPE = [],[],[],[],[],[],[],[],[],[]
+    d1,d2,d3,d4,e1,e2,e3,e4,f1,f2,f3,f4, ShortIDPE = [],[],[],[],[],[],[],[],[],[],[],[],[]
 
     if ((t1 == 'my1')
         | (t1 == 'fy1')
@@ -200,34 +206,34 @@ def yieldcollect(filename,t1,t2,t3,ID, per1, per2, per3):
                         c2.append(float(i[7]))
                     elif i[2]=='9':
                         c3.append(float(i[7]))
-                 # elif line[0]=='3' and line.split()[3]=='3':
-                 #    i = line.split()
-                 #    if i[2]=='1':
-                 #        ShortIDPE.append(i[4])
-                 #        d1.append(float(i[7]))
-                 #    elif i[2]=='2':
-                 #        d2.append(float(i[7]))
-                 #    elif i[2]=='3':
-                 #        d3.append(float(i[7]))
-                 #    elif i[2]=='4':
-                 #        e1.append(float(i[7]))
-                 #    elif i[2]=='5':
-                 #        e2.append(float(i[7]))
-                 #    elif i[2]=='6':
-                 #        e3.append(float(i[7]))
-                 #    elif i[2]=='7':
-                 #        f1.append(float(i[7]))
-                 #    elif i[2]=='8':
-                 #        f2.append(float(i[7]))
-                 #    elif i[2]=='9':
-                 #        f3.append(float(i[7]))
+                 elif line[0]=='3' and line.split()[3]=='3':
+                    i = line.split()
+                    if i[2]=='1':
+                        ShortIDPE.append(i[4])
+                        d1.append(float(i[7]))
+                    elif i[2]=='2':
+                        d2.append(float(i[7]))
+                    elif i[2]=='3':
+                        d3.append(float(i[7]))
+                    elif i[2]=='4':
+                        e1.append(float(i[7]))
+                    elif i[2]=='5':
+                        e2.append(float(i[7]))
+                    elif i[2]=='6':
+                        e3.append(float(i[7]))
+                    elif i[2]=='7':
+                        f1.append(float(i[7]))
+                    elif i[2]=='8':
+                        f2.append(float(i[7]))
+                    elif i[2]=='9':
+                        f3.append(float(i[7]))
 
         aList = np.array([a1, a2, a3],dtype='float')
         bList = np.array([b1, b2, b3],dtype='float')
         cList = np.array([c1, c2, c3],dtype='float')
-        # dList = np.array([d1, d2, d3],dtype='float')
-        # eList = np.array([e1, e2, e3],dtype='float')
-        # fList = np.array([f1, f2, f3],dtype='float')
+        dList = np.array([d1, d2, d3],dtype='float')
+        eList = np.array([e1, e2, e3],dtype='float')
+        fList = np.array([f1, f2, f3],dtype='float')
 
         print(file, 'read.')
         print('Solutions written to numpy arrays a, b and c.')
@@ -241,9 +247,9 @@ def yieldcollect(filename,t1,t2,t3,ID, per1, per2, per3):
             vec1 = np.dot(aList.transpose(), Lyield)
             vec2 = np.dot(bList.transpose(), Lyield)
             vec3 = np.dot(cList.transpose(), Lyield)
-            # vec4 = np.dot(dList.transpose(), Lyield)
-            # vec5 = np.dot(eList.transpose(), Lyield)
-            # vec6 = np.dot(fList.transpose(), Lyield)
+            vec4 = np.dot(dList.transpose(), Lyield)
+            vec5 = np.dot(eList.transpose(), Lyield)
+            vec6 = np.dot(fList.transpose(), Lyield)
 
             #Multiply matrices to obtain solutions.
             vec1per = (-(np.dot(aList.transpose(), Lper1))*200) + (np.dot(aList.transpose(), Lper2)).sum(1)
@@ -252,9 +258,16 @@ def yieldcollect(filename,t1,t2,t3,ID, per1, per2, per3):
 
             df = list(zip(ShortID, vec1.sum(1), vec2.sum(1), vec3.sum(1), vec1per, vec2per, vec3per))
             df = sorted(df, key = lambda id: id[0])
+            dfPE = list(zip(ShortIDPE, vec4.sum(1), vec5.sum(1), vec6.sum(1)))
+            dfPE = sorted(dfPE, key = lambda id: id[0])
 
             df = pd.DataFrame(df, columns = [ID, t1, t2, t3, per1, per2, per3])
             df[ID] = df[ID].astype(int)
+
+            dfPE = pd.DataFrame(dfPE, columns = [ID, pe1, pe2, pe3])
+            dfPE[ID] = dfPE[ID].astype(int)
+
+            df = pd.merge(df,dfPE, how="left", on = ID)
 
         if (t1 == 'scs1'):
 
@@ -262,15 +275,22 @@ def yieldcollect(filename,t1,t2,t3,ID, per1, per2, per3):
             vec1 = np.dot(aList.transpose(), Lscs)
             vec2 = np.dot(bList.transpose(), Lscs)
             vec3 = np.dot(cList.transpose(), Lscs)
-            # vec4 = np.dot(dList.transpose(), Lscs)
-            # vec5 = np.dot(eList.transpose(), Lscs)
-            # vec6 = np.dot(fList.transpose(), Lscs)
+            vec4 = np.dot(dList.transpose(), Lscs)
+            vec5 = np.dot(eList.transpose(), Lscs)
+            vec6 = np.dot(fList.transpose(), Lscs)
 
             df = list(zip(ShortID, vec1.sum(1), vec2.sum(1), vec3.sum(1)))
             df = sorted(df, key = lambda id: id[0])
+            dfPE = list(zip(ShortIDPE, vec4.sum(1), vec5.sum(1), vec6.sum(1)))
+            dfPE = sorted(dfPE, key = lambda id: id[0])
 
             df = pd.DataFrame(df, columns = [ID, t1, t2, t3])
             df[ID] = df[ID].astype(int)
+
+            dfPE = pd.DataFrame(dfPE, columns = [ID, pe1, pe2, pe3])
+            dfPE[ID] = dfPE[ID].astype(int)
+
+            df = pd.merge(df,dfPE, how="left", on = ID)
 
     if ((t1 == 'pp1')
         | (t1 == 'fp1')
@@ -305,10 +325,40 @@ def yieldcollect(filename,t1,t2,t3,ID, per1, per2, per3):
                         c3.append(float(i[7]))
                     elif i[2]=='12':
                         c4.append(float(i[7]))
+                 elif line[0]=='3' and line.split()[3]=='3':
+                    i = line.split()
+                    if i[2]=='1':
+                        ShortIDPE.append(i[4])
+                        d1.append(float(i[7]))
+                    elif i[2]=='2':
+                        d2.append(float(i[7]))
+                    elif i[2]=='3':
+                        d3.append(float(i[7]))
+                    elif i[2]=='4':
+                        d4.append(float(i[7]))
+                    elif i[2]=='5':
+                        e1.append(float(i[7]))
+                    elif i[2]=='6':
+                        e2.append(float(i[7]))
+                    elif i[2]=='7':
+                        e3.append(float(i[7]))
+                    elif i[2]=='8':
+                        e4.append(float(i[7]))
+                    elif i[2]=='9':
+                        f1.append(float(i[7]))
+                    elif i[2]=='10':
+                        f2.append(float(i[7]))
+                    elif i[2]=='11':
+                        f3.append(float(i[7]))
+                    elif i[2]=='12':
+                        f4.append(float(i[7]))
 
         aList = np.array([a1, a2, a3, a4],dtype='float')
         bList = np.array([b1, b2, b3, b4],dtype='float')
         cList = np.array([c1, c2, c3, c4],dtype='float')
+        dList = np.array([d1, d2, d3, d4],dtype='float')
+        eList = np.array([e1, e2, e3, e4],dtype='float')
+        fList = np.array([f1, f2, f3, f4],dtype='float')
 
         print(file, 'read.')
         print('Solutions written to numpy arrays a, b and c.')
@@ -317,11 +367,21 @@ def yieldcollect(filename,t1,t2,t3,ID, per1, per2, per3):
         vec1 = np.dot(aList.transpose(), Lfppp)
         vec2 = np.dot(bList.transpose(), Lfppp)
         vec3 = np.dot(cList.transpose(), Lfppp)
+        vec4 = np.dot(dList.transpose(), Lfppp)
+        vec5 = np.dot(eList.transpose(), Lfppp)
+        vec6 = np.dot(fList.transpose(), Lfppp)
 
         df = list(zip(ShortID, vec1.sum(1), vec2.sum(1), vec3.sum(1)))
         df = sorted(df, key = lambda id: id[0])
+        dfPE = list(zip(ShortIDPE, vec4.sum(1), vec5.sum(1), vec6.sum(1)))
+        dfPE = sorted(dfPE, key = lambda id: id[0])
 
         df = pd.DataFrame(df, columns = [ID, t1, t2, t3])
         df[ID] = df[ID].astype(int)
+
+        dfPE = pd.DataFrame(dfPE, columns = [ID, pe1, pe2, pe3])
+        dfPE[ID] = dfPE[ID].astype(int)
+
+        df = pd.merge(df,dfPE, how="left", on = ID)
 
     return df

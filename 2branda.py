@@ -20,11 +20,18 @@ from kynbotamat_module import yieldcollect
 
 #Option to read SOL files for these 3 traits and collect results, 0 means skip
 # and 1 means SOL files will be read
-yield_results = 1
-fertility_results = 1
-conf_results = 1
-rankorder_results = 1
-long_results = 1
+yield_collect = 1
+plotyieldPE = 1
+
+fertility_collect = 1
+conf_collect = 1
+rankorder_collect = 1
+long_collect = 1
+
+phantomcollection = 0
+
+collectunscaled = 1
+plotunscaled = 1
 
 #Option to write scaled results for above traits to seperate files to be read
 #later, 0 means skip and 1 means seperate result files will be written to disc
@@ -41,13 +48,13 @@ collectresults = 1    #0 means don't, 1 means collect
 
 #Option to write large datafile to disc
 writebranda = 1
+nautastod = 1
+plottingbranda = 1
 
-collectdmufiles = 0
-
-phantomcollection = 0
-
-plotting = 0
-
+pltshow = 0
+#---------------------------------------------------------------------------
+# PART 1 - Defining variables and file names
+#---------------------------------------------------------------------------
 #---------------------------------------------------------------------------
 #File with information for program!
 control = pd.read_csv(
@@ -58,39 +65,39 @@ control = pd.read_csv(
 #---------------------------------------------------------------------------
 #Info for program
 #---------------------------------------------------------------------------
-yearmonth = control.loc[15,'control']
-brandafile = control.loc[23,'control']
+yearmonth = control.loc[0,'control']
+brandafile = f'../{yearmonth}/dmu_data/branda{yearmonth}'
 #Scaling year, present year - 5 years
-scalingyear = pd.to_numeric(control.loc[12,'control'])
+scalingyear = pd.to_numeric(control.loc[13,'control'])
 #Scaling objects
-imean = pd.to_numeric(control.loc[13,'control'])
-isd = pd.to_numeric(control.loc[14,'control'])
+imean = pd.to_numeric(control.loc[14,'control'])
+isd = pd.to_numeric(control.loc[15,'control'])
 #---------------------------------------------------------------------------
 #Radnrkodifile
-radnrkodifile = '../dmu_data/radnrkodi' #Created by prep_tdm.f
+radnrkodifile = f'../{yearmonth}/dmu_data/radnrkodi' #Created by prep_tdm.f
 #Format of radnrkodi file created by prep_tdm.f
 radnrkodi_columns = ['id','code_id','stada','norec','fix1','fix2', 'fix3','sex']
 widths_radnrkodi = [15,9,3,3,6,6,6,2]
 #---------------------------------------------------------------------------
 #Name of pedigree file
-pedigreefile = control.loc[11,'control']
+pedigreefile = control.loc[12,'control']
 #Format of pedigree file from Huppa
 ped_columns = ['id','dam','sire','unused','sex','unused2', 'bullno', 'name', 'farm']
 ped_widths = [15,15,15,12,1,2,5,20,20]
 #---------------------------------------------------------------------------
 
 #DMU sol files
-mysol = f'../DMU/{yearmonth}/my/SOL'
-fysol = f'../DMU/{yearmonth}/fy/SOL'
-pysol = f'../DMU/{yearmonth}/py/SOL'
-scssol = f'../DMU/{yearmonth}/scs/SOL'
-fpsol = f'../DMU/{yearmonth}/fp/SOL'
-ppsol = f'../DMU/{yearmonth}/pp/SOL'
+mysol = f'../{yearmonth}/DMU/my/SOL'
+fysol = f'../{yearmonth}/DMU/fy/SOL'
+pysol = f'../{yearmonth}/DMU/py/SOL'
+scssol = f'../{yearmonth}/DMU/scs/SOL'
+fpsol = f'../{yearmonth}/DMU/fp/SOL'
+ppsol = f'../{yearmonth}/DMU/pp/SOL'
 
-fertilitysolfile = f'../DMU/{yearmonth}/fer/SOL'
-rankordersolfile = f'../DMU/{yearmonth}/rank/SOL'
-confsolfile = f'../DMU/{yearmonth}/conf/SOL'
-longsolfile = f'../DMU/{yearmonth}/long/SOL'
+fertilitysolfile = f'../{yearmonth}/DMU/fer/SOL'
+rankordersolfile = f'../{yearmonth}/DMU/rank/SOL'
+confsolfile = f'../{yearmonth}/DMU/conf/SOL'
+longsolfile = f'../{yearmonth}/DMU/long/SOL'
 #Format of SOL files
 solcolumns = ['1_code_effect', #2 for fixed and 4 for genetic
     '2_trait_no',   # lact 1, 2 or 3
@@ -106,44 +113,44 @@ sol_widths = [1,3,3,4,12,12,12,20,20]
 #Observationfiles used for DMU
 #---------------------------------------------------------------------------
 #---------------------------------------------------------------------------
-fertilityobs = '../dmu_data/dmu_fertility.txt'
+fertilityobs = f'../{yearmonth}/dmu_data/dmu_fertility.txt'
 fertility_columns = ['code_id','HBY','HC1','HC2','HC3','IYM0','IYM1','IYM2',
     'IYM3','AGEi_h','AGEc_1','AGEc_2','AGEc_3','tech_h',
     'CR0','ICF1','ICF2','ICF3','IFL1','IFL2','IFL3']
 #---------------------------------------------------------------------------
-confobs = '../dmu_data/dmu_conformation.txt'
+confobs = f'../{yearmonth}/dmu_data/dmu_conformation.txt'
 conf_columns = ['code_id','HdomsY','lact','AGEc_1',
     'boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahalli', 'malabratti',
-    'stada_haekla_hlid', 'stada_haekla_aftan', 'klaufhalli', 'jugurfesta',
+    'stada_hh', 'stada_ha', 'klaufhalli', 'jugurfesta',
     'jugurband', 'jugurdypt', 'spenalengd', 'spenathykkt', 'spenastada',
     'mjaltir', 'skap']
 #---------------------------------------------------------------------------
-rankorderobs = '../dmu_data/dmu_rankorder.txt'
+rankorderobs = f'../{yearmonth}/dmu_data/dmu_rankorder.txt'
 rankorder_columns = ['code_id', 'year', 'mjaltarod', 'gaedarod']
 #---------------------------------------------------------------------------
 #---------------------------------------------------------------------------
-longobs = '../dmu_data/dmu_long.txt'
+longobs = f'../{yearmonth}/dmu_data/dmu_long.txt'
 longobs_columns = ['code_id','AGEc_1','CYM1','h5y','herdCY1','L1','L2','L3']
 #---------------------------------------------------------------------------
 
 # #Seperate EBV result files
-yieldebv = '../results/yieldebv.txt'
-fertilityebv = '../results/fertilityebv.txt' #written by this program if option above set to 1
-confebv = '../results/conformationebv.txt' #written by this program if option above set to 1
-rankorderebv = '../results/rankorderebv.txt' #written by this program if option above set to 1
-longebv = '../results/longebv.txt'        #written by this program if option above set to 1
+yieldebv = f'../{yearmonth}/results/yieldebv.txt'
+fertilityebv = f'../{yearmonth}/results/fertilityebv.txt' #written by this program if option above set to 1
+confebv = f'../{yearmonth}/results/conformationebv.txt' #written by this program if option above set to 1
+rankorderebv = f'../{yearmonth}/results/rankorderebv.txt' #written by this program if option above set to 1
+longebv = f'../{yearmonth}/results/longebv.txt'        #written by this program if option above set to 1
 #Accuracy files for yield and scs
-accyield = '../results/accuracy.sol' #From programs by JHE
-accscs = '../results/accuracy_f.sol' #From programs by JHE
+accyield = f'../{yearmonth}/results/accuracy.sol' #From programs by JHE
+accscs = f'../{yearmonth}/results/accuracy_f.sol' #From programs by JHE
 
 #---------------------------------------------------------------------------
 #Columns in EBV files
 #---------------------------------------------------------------------------
-accyield_columns = ['id','no_daughters_yield', 'yield_acc']
-widths_accyield = [15,8,8]
+accyield_columns = ['code_id','ownrec','nopar','offt','offn','offyield','yield_acc','SE']
+widths_accyield = [6,4,5,7,6,6,7,7]
 
-accscs_columns =  ['id','no_daughters_SCS', 'SCS_acc']
-widths_accscs = [15,8,8]
+accscs_columns =  ['code_id','ownrec','nopar','offt','offn','offscs','scs_acc','SE']
+widths_accscs = [6,4,5,7,6,6,7,7]
 #---------------------------------------------------------------------------
 #Space seperated files/dataframes
 #(Created by this program if option above set to 1)
@@ -154,7 +161,7 @@ fertilityebv_columns = ['id','fer_lact1','fer_lact2','fer_lact3','CR0','ICF',
     'IFL','fertility','offCR0','offICF1','offICF2','offICF3']
 
 confebv_columns = ['id','boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahalli', 'malabratti',
-    'stada_haekla_hlid', 'stada_haekla_aftan', 'klaufhalli', 'jugurfesta',
+    'stada_hh', 'stada_ha', 'klaufhalli', 'jugurfesta',
     'jugurband', 'jugurdypt', 'spenalengd', 'spenathykkt', 'spenastada',
     'mjaltir', 'skap','offconf']
 
@@ -164,10 +171,10 @@ longebv_columns = ['id','L1','L2','L3','offlong1','offlong2','offlong3']
 
 
 #Phantom group parent results
-fertilityebvphg = '../results/fertilityebvphg.txt' #written by this program if option above set to 1
-confebvphg = '../results/conformationebvphg.txt' #written by this program if option above set to 1
-rankorderebvphg = '../results/rankorderebvphg.txt' #written by this program if option above set to 1
-longebvphg = '../results/longebvphg.txt' #written by this program if option above set to 1
+fertilityebvphg = f'../{yearmonth}/results/fertilityebvphg.txt' #written by this program if option above set to 1
+confebvphg = f'../{yearmonth}/results/conformationebvphg.txt' #written by this program if option above set to 1
+rankorderebvphg = f'../{yearmonth}/results/rankorderebvphg.txt' #written by this program if option above set to 1
+longebvphg = f'../{yearmonth}/results/longebvphg.txt' #written by this program if option above set to 1
 #---------------------------------------------------------------------------
 
 #Large file with all solutions scaled
@@ -178,18 +185,18 @@ brandafile_columns = ['id',                                             #1
         'milkper', 'fatper', 'protper',                                 #3
         'fer_lact1','fer_lact2','fer_lact3','CR0','ICF','IFL',          #6
         'boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahalli', 'malabratti', #6
-        'stada_haekla_hlid', 'stada_haekla_aftan', 'klaufhalli', 'jugurfesta', #4
+        'stada_hh', 'stada_ha', 'klaufhalli', 'jugurfesta', #4
         'jugurband', 'jugurdypt', 'spenalengd', 'spenathykkt', 'spenastada',  #5
-        'mjaltir', 'skap','mjaltarod', 'gaedarod','L1','L2','L3',              #5
+        'mjaltir', 'skap','mjaltarod', 'gaedarod','L1','L2','L3',              #7
         'myt','fyt','pyt','fpt','ppt',                 #5
-        'yieldtotal','fertility','scs','jugur','spenar','mjaltir_t','skap2', #7
+        'yieldtotal','fertility','scst','skrokkur','jugur','spenar','mjaltir_t', #7
         'total',                                                             #1
-        'no_daughters_yield', 'yield_acc', 'no_daughters_SCS', 'SCS_acc', #4
+        'offyield', 'yield_acc', 'offscs', 'scs_acc', #4
         'offconf','offrankorder','offCR0','offICF1','offICF2','offICF3', #6
-        'offlong1','offlong2','offlong3'                                        #1
-        ] #72 columns
-widths_branda = [15,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4, #31
-    4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4] #41
+        'offlong1','offlong2','offlong3'                                        #3
+        ] #76 columns
+widths_branda = [15,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4, #
+    4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4] #
 #---------------------------------------------------------------------------
 
 
@@ -275,7 +282,7 @@ def scaling(df,trait,x,ave_group):
 #-------------------------------------------------------------
 #Function to read imported result files and combine to a big one
 #Fixed with files
-def combineresultsfwf(df, file, columns,widths_file):
+def combineresultsfwf(df, file, columns,widths_file,t1,t2):
     print( f'-------------------------------------------' )
     print( f'Reading {file} file .....' )
     print( f'-------------------------------------------' )
@@ -285,7 +292,8 @@ def combineresultsfwf(df, file, columns,widths_file):
         header=None,
         names=columns)
     #Merging ownobs and id file to bring back einstaklingsnumer used in huppa
-    df = pd.merge(left=df, right=df2, on='id',  how='left')
+    df2 = pd.merge(left=df2, right=radnrkodi[['id','code_id']], on='code_id',  how='left').fillna(0, downcast='infer')
+    df = pd.merge(left=df, right=df2[['id',t1,t2]], on='id',  how='left')
     df = df.drop_duplicates(subset=['id'])
     df = df.sort_values(by=['id'])
     return df
@@ -318,7 +326,9 @@ def combineresultsdf(df, df2,columns):
     df = df.sort_values(by=['id'])
     return df
 
-
+#---------------------------------------------------------------------------
+# PART 2 - Collection of SOL results
+#---------------------------------------------------------------------------
 #-------------------------------------------------------------
 #-------------------------------------------------------------
 #START OF PROGRAM!!!
@@ -326,11 +336,11 @@ def combineresultsdf(df, df2,columns):
 #-------------------------------------------------------------
 #Reading in id codes to replace in SOL files
 if ((collectresults == 1)
-    | (fertility_results == 1)
-    | (conf_results == 1)
-    | (rankorder_results == 1)
-    | (long_results == 1)
-    | (yield_results == 1)
+    | (fertility_collect == 1)
+    | (conf_collect == 1)
+    | (rankorder_collect == 1)
+    | (long_collect == 1)
+    | (yield_collect == 1)
     ):
     radnrkodi = readingfilefwf(radnrkodifile,radnrkodi_columns,widths_radnrkodi)
     radnrkodi = radnrkodi.drop(
@@ -341,25 +351,29 @@ if ((collectresults == 1)
 
 #Reading yield SOL files, collecting and scaling results
 #Write results to disc if option above set to 1
-if yield_results == 1:
+if (yield_collect == 1):
 
-    myebv = yieldcollect(mysol,'my1','my2','my3','code_id','myper1','myper2','myper3')
+    myebv = yieldcollect(mysol,'my1','my2','my3','code_id','myper1','myper2','myper3','my1PE','my2PE','my3PE')
     yielddf = pd.merge(left=radnrkodi, right=myebv, on='code_id', how='left')
 
-    fyebv = yieldcollect(fysol,'fy1','fy2','fy3','code_id','fyper1','fyper2','fyper3')
+    fyebv = yieldcollect(fysol,'fy1','fy2','fy3','code_id','fyper1','fyper2','fyper3','fy1PE','fy2PE','fy3PE')
     yielddf = pd.merge(left=yielddf, right=fyebv, on='code_id', how='left')
 
-    pyebv = yieldcollect(pysol,'py1','py2','py3','code_id','pyper1','pyper2','pyper3')
+    pyebv = yieldcollect(pysol,'py1','py2','py3','code_id','pyper1','pyper2','pyper3','py1PE','py2PE','py3PE')
     yielddf = pd.merge(left=yielddf, right=pyebv, on='code_id', how='left')
 
-    scsebv = yieldcollect(scssol,'scs1','scs2','scs3','code_id','','','')
+    scsebv = yieldcollect(scssol,'scs1','scs2','scs3','code_id','','','','scs1PE','scs2PE','scs3PE')
     yielddf = pd.merge(left=yielddf, right=scsebv, on='code_id', how='left')
 
-    fpebv = yieldcollect(fpsol,'fp1','fp2','fp3','code_id','','','')
+    fpebv = yieldcollect(fpsol,'fp1','fp2','fp3','code_id','','','','fp1PE','fp2PE','fp3PE')
     yielddf = pd.merge(left=yielddf, right=fpebv, on='code_id', how='left')
 
-    ppebv = yieldcollect(ppsol,'pp1','pp2','pp3','code_id','','','')
+    ppebv = yieldcollect(ppsol,'pp1','pp2','pp3','code_id','','','','pp1PE','pp2PE','pp3PE')
     yielddf = pd.merge(left=yielddf, right=ppebv, on='code_id', how='left')
+
+    if collectunscaled == 1:
+        unscaledyield = yielddf[['id','my1','my2','my3','fy1','fy2','fy3',
+            'py1','py2','py3','scs1','scs2','scs3','fp1','fp2','fp3','pp1','pp2','pp3']]
 
     yieldscale = yielddf.loc[yielddf['stada'] == 1]
 
@@ -409,20 +423,101 @@ if yield_results == 1:
                             yielddf['pyper2'] * 0.3 +
                             yielddf['pyper3'] * 0.2 )
 
+    yieldPE = yielddf[['id','my1PE','my2PE','my3PE','fy1PE',
+        'fy2PE','fy3PE','py1PE','py2PE','py3PE','scs1PE','scs2PE','scs3PE',
+        'fp1PE','fp2PE','fp3PE','pp1PE','pp2PE','pp3PE']]
+
+    if plotyieldPE == 1:
+        yieldPE['BY'] = (yieldPE.id.astype(str).str[:4]).astype(int)
+        #Creating figure and 16 subplots
+        fig, ((ax1, ax2),(ax3, ax4),(ax5, ax6))  = plt.subplots(3,2, sharex=True)
+
+        plottingmean(ax1,yieldPE,'my1PE','PE','Mjólk kg 1. mjalt')
+        plottingmean(ax1,yieldPE,'my2PE','PE','Mjólk kg 2. mjalt')
+        plottingmean(ax1,yieldPE,'my3PE','PE','Mjólk kg 3. mjalt')
+
+        plottingmean(ax2,yieldPE,'fy1PE','','Fita kg 1. mjalt')
+        plottingmean(ax2,yieldPE,'fy2PE','','Fita kg 2. mjalt')
+        plottingmean(ax2,yieldPE,'fy3PE','','Fita kg 3. mjalt')
+
+        plottingmean(ax3,yieldPE,'py1PE','PE','Prótein kg 1. mjalt')
+        plottingmean(ax3,yieldPE,'py2PE','PE','Prótein kg 2. mjalt')
+        plottingmean(ax3,yieldPE,'py3PE','PE','Prótein kg 3. mjalt')
+
+        plottingmean(ax4,yieldPE,'scs1PE','','Frumutala 1. mjalt')
+        plottingmean(ax4,yieldPE,'scs2PE','','Frumutala 2. mjalt')
+        plottingmean(ax4,yieldPE,'scs3PE','','Frumutala 3. mjalt')
+
+        plottingmean(ax5,yieldPE,'fp1PE','PE','Fita % 1. mjalt')
+        plottingmean(ax5,yieldPE,'fp2PE','PE','Fita % 2. mjalt')
+        plottingmean(ax5,yieldPE,'fp3PE','PE','Fita % 3. mjalt')
+
+        plottingmean(ax6,yieldPE,'pp1PE','','Prótein % 1. mjalt')
+        plottingmean(ax6,yieldPE,'pp2PE','','Prótein % 2. mjalt')
+        plottingmean(ax6,yieldPE,'pp3PE','','Prótein % 3. mjalt')
+
+        fig.suptitle(f'Meðal PE árganga {yearmonth}', fontsize=26, fontweight ="bold")
+        plt.subplots_adjust(left=0.05, bottom=0.07, right=0.97, top=0.94, wspace=0.05, hspace=0.09)
+
+        fig.set_size_inches([18, 9])
+        plt.savefig(f'../{yearmonth}/figures/PEyieldmeanbybirthyear{yearmonth}.png')
+
+        if pltshow == 1:
+            plt.show()
+
+    if plotunscaled == 1:
+        unscaledyield['BY'] = (unscaledyield.id.astype(str).str[:4]).astype(int)
+        #Creating figure and 16 subplots
+        fig, ((ax1, ax2),(ax3, ax4),(ax5, ax6))  = plt.subplots(3,2, sharex=True)
+
+        plottingmean(ax1,unscaledyield,'my1','Óskalað DMU kynbótamat','Mjólk kg 1. mjalt')
+        plottingmean(ax1,unscaledyield,'my2','Óskalað DMU kynbótamat','Mjólk kg 2. mjalt')
+        plottingmean(ax1,unscaledyield,'my3','Óskalað DMU kynbótamat','Mjólk kg 3. mjalt')
+
+        plottingmean(ax2,unscaledyield,'fy1','','Fita kg 1. mjalt')
+        plottingmean(ax2,unscaledyield,'fy2','','Fita kg 2. mjalt')
+        plottingmean(ax2,unscaledyield,'fy3','','Fita kg 3. mjalt')
+
+        plottingmean(ax3,unscaledyield,'py1','Óskalað DMU kynbótamat','Prótein kg 1. mjalt')
+        plottingmean(ax3,unscaledyield,'py2','Óskalað DMU kynbótamat','Prótein kg 2. mjalt')
+        plottingmean(ax3,unscaledyield,'py3','Óskalað DMU kynbótamat','Prótein kg 3. mjalt')
+
+        plottingmean(ax4,unscaledyield,'scs1','','Frumutala 1. mjalt')
+        plottingmean(ax4,unscaledyield,'scs2','','Frumutala 2. mjalt')
+        plottingmean(ax4,unscaledyield,'scs3','','Frumutala 3. mjalt')
+
+        plottingmean(ax5,unscaledyield,'fp1','Óskalað DMU kynbótamat','Fita % 1. mjalt')
+        plottingmean(ax5,unscaledyield,'fp2','Óskalað DMU kynbótamat','Fita % 2. mjalt')
+        plottingmean(ax5,unscaledyield,'fp3','Óskalað DMU kynbótamat','Fita % 3. mjalt')
+
+        plottingmean(ax6,unscaledyield,'pp1','','Prótein % 1. mjalt')
+        plottingmean(ax6,unscaledyield,'pp2','','Prótein % 2. mjalt')
+        plottingmean(ax6,unscaledyield,'pp3','','Prótein % 3. mjalt')
+
+        fig.suptitle(f'Meðal óskalað kynbótamat árganga {yearmonth}', fontsize=26, fontweight ="bold")
+        plt.subplots_adjust(left=0.05, bottom=0.07, right=0.97, top=0.94, wspace=0.05, hspace=0.09)
+
+        fig.set_size_inches([18, 9])
+        plt.savefig(f'../{yearmonth}/figures/unscaledyieldmeanbybirthyear{yearmonth}.png')
+
+        if pltshow == 1:
+            plt.show()
+
     if seperate_files == 1:
         print('Yield results written to seperate file')
         yield_results = yielddf[yieldebv_columns].astype(float).round(2)#.astype(int)
         yield_results.to_csv(yieldebv, index=False, header=False, sep=' ')
-        print(yielddf.iloc[50000:50015])
-        print(yielddf.info())
+
         print(f'Yield results written to {yieldebv}')
 
     print(yielddf.iloc[500000:500015])
     print(yielddf.info())
+else:
+    print('Rank order results not collected')
 
 #Reading fertilty SOL file, collecting and scaling results and counting daughters
 #Write results to disc if option above set to 1
-if fertility_results == 1:
+if (fertility_collect == 1):
     #Reading sol files
     fertilitysol = readingfilefwf(fertilitysolfile,solcolumns,sol_widths)
     #Sepererating phantom groups from known animals in SOL file and merging real id's
@@ -436,6 +531,10 @@ if fertility_results == 1:
     fertilitydf = solutions(fertilitysolids, fertilitydf, 5, 'IFL1','id')
     fertilitydf = solutions(fertilitysolids, fertilitydf, 6, 'IFL2','id')
     fertilitydf = solutions(fertilitysolids, fertilitydf, 7, 'IFL3','id')
+
+    if collectunscaled == 1:
+        unscaledfer = fertilitydf[['id','CR0','ICF1','ICF2','ICF3','IFL1','IFL2','IFL3']]
+
     #Reading own observations files
     ownobs_fertility = ownobs(fertilityobs,fertility_columns)
     #Creating average groups to scale
@@ -470,6 +569,29 @@ if fertility_results == 1:
     fertilitydf = countingoff(ownobs_fertility,'ICF1','offICF1', fertilitydf)
     fertilitydf = countingoff(ownobs_fertility,'ICF2','offICF2', fertilitydf)
     fertilitydf = countingoff(ownobs_fertility,'ICF3','offICF3', fertilitydf)
+
+    if plotunscaled == 1:
+        unscaledfer['BY'] = (unscaledfer.id.astype(str).str[:4]).astype(int)
+        #Creating figure and 16 subplots
+        fig, ((ax1, ax2, ax3))  = plt.subplots(3, sharex=True)
+
+        plottingmean(ax1,unscaledfer,'CR0','Óskalað DMU kynbótamat','Fanghlutfall 1. sæðingar, kvígur')
+        plottingmean(ax2,unscaledfer,'ICF1','Óskalað DMU kynbótamat','Bil burður 1. sæð. - 1. mjalt')
+        plottingmean(ax2,unscaledfer,'ICF2','Óskalað DMU kynbótamat','Bil burður 1. sæð. - 2. mjalt')
+        plottingmean(ax2,unscaledfer,'ICF3','Óskalað DMU kynbótamat','Bil burður 1. sæð. - 3. mjalt')
+
+        plottingmean(ax3,unscaledfer,'IFL1','Óskalað DMU kynbótamat','Bil 1. sæð. til síðasta sæð. - 1. mjalt')
+        plottingmean(ax3,unscaledfer,'IFL2','Óskalað DMU kynbótamat','Bil 1. sæð. til síðasta sæð. - 2. mjalt')
+        plottingmean(ax3,unscaledfer,'IFL3','Óskalað DMU kynbótamat','Bil 1. sæð. til síðasta sæð. - 3. mjalt')
+
+        fig.suptitle(f'Meðal óskalað kynbótamat árganga {yearmonth}', fontsize=26, fontweight ="bold")
+        plt.subplots_adjust(left=0.05, bottom=0.07, right=0.97, top=0.94, wspace=0.05, hspace=0.09)
+
+        fig.set_size_inches([18, 9])
+        plt.savefig(f'../{yearmonth}/figures/unscaledfertilitymeanbybirthyear{yearmonth}.png')
+
+        if pltshow == 1:
+            plt.show()
 
     if seperate_files == 1:
         print('Fertility results written to seperate file')
@@ -510,7 +632,7 @@ else:
 
 #Reading conformation SOL file, collecting and scaling results and counting daughters
 #Write results to disc if option above set to 1
-if conf_results == 1:
+if (conf_collect == 1):
 
     #Reading sol files
     confsol = readingfilefwf(confsolfile,solcolumns,sol_widths)
@@ -524,8 +646,8 @@ if conf_results == 1:
     confdf = solutions(confsolids, confdf, 4, 'malabreidd','id')
     confdf = solutions(confsolids, confdf, 5, 'malahalli','id')
     confdf = solutions(confsolids, confdf, 6, 'malabratti','id')
-    confdf = solutions(confsolids, confdf, 7, 'stada_haekla_hlid','id')
-    confdf = solutions(confsolids, confdf, 8, 'stada_haekla_aftan','id')
+    confdf = solutions(confsolids, confdf, 7, 'stada_hh','id')
+    confdf = solutions(confsolids, confdf, 8, 'stada_ha','id')
     confdf = solutions(confsolids, confdf, 9, 'klaufhalli','id')
     confdf = solutions(confsolids, confdf, 10, 'jugurfesta','id')
     confdf = solutions(confsolids, confdf, 11, 'jugurband','id')
@@ -535,6 +657,13 @@ if conf_results == 1:
     confdf = solutions(confsolids, confdf, 15, 'spenastada','id')
     confdf = solutions(confsolids, confdf, 16, 'mjaltir','id')
     confdf = solutions(confsolids, confdf, 17, 'skap','id')
+
+    if collectunscaled == 1:
+        unscaledconf = confdf[['id','boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahalli', 'malabratti',
+            'stada_hh', 'stada_ha', 'klaufhalli', 'jugurfesta',
+            'jugurband', 'jugurdypt', 'spenalengd', 'spenathykkt', 'spenastada',
+            'mjaltir', 'skap']]
+
     #Reading own observations files
     ownobs_conf = ownobs(confobs,conf_columns)
     #Creating average groups to scale
@@ -546,8 +675,8 @@ if conf_results == 1:
     confdf['malabreidd'] = scaling(confdf,'malabreidd',1, conf_ave)
     confdf['malahalli'] = scaling(confdf,'malahalli',1, conf_ave)
     confdf['malabratti'] = scaling(confdf,'malabratti',1, conf_ave)
-    confdf['stada_haekla_hlid'] = scaling(confdf,'stada_haekla_hlid',1, conf_ave)
-    confdf['stada_haekla_aftan'] = scaling(confdf,'stada_haekla_aftan',1, conf_ave)
+    confdf['stada_hh'] = scaling(confdf,'stada_hh',1, conf_ave)
+    confdf['stada_ha'] = scaling(confdf,'stada_ha',1, conf_ave)
     confdf['klaufhalli'] = scaling(confdf,'klaufhalli',1, conf_ave)
     confdf['jugurfesta'] = scaling(confdf,'jugurfesta',1, conf_ave)
     confdf['jugurband'] = scaling(confdf,'jugurband',1, conf_ave)
@@ -562,6 +691,38 @@ if conf_results == 1:
     ownobs_conf = pd.merge(left=ownobs_conf, right=ped[['id','sire']], on='id', how='left')
 
     confdf = countingoff(ownobs_conf,'boldypt','offconf', confdf)
+
+    if plotunscaled == 1:
+        unscaledconf['BY'] = (unscaledconf.id.astype(str).str[:4]).astype(int)
+        #Creating figure and 16 subplots
+        fig, ((ax1, ax2),(ax3, ax4),(ax5, ax6))  = plt.subplots(3,2, sharex=True)
+
+        plottingmean(ax1,unscaledconf,'boldypt','Óskalað DMU kynbótamat','Boldýpt')
+        plottingmean(ax1,unscaledconf,'utlogur','Óskalað DMU kynbótamat','Útlögur')
+        plottingmean(ax1,unscaledconf,'yfirlina','Óskalað DMU kynbótamat','Yfirlína')
+        plottingmean(ax2,unscaledconf,'malabreidd','','Malabreidd')
+        plottingmean(ax2,unscaledconf,'malahalli','','Malahalli')
+        plottingmean(ax2,unscaledconf,'malabratti','','Malabratti')
+        plottingmean(ax3,unscaledconf,'stada_hh','Óskalað DMU kynbótamat','Staða hækla - hlið')
+        plottingmean(ax3,unscaledconf,'stada_ha','Óskalað DMU kynbótamat','Staða hækla - aftan')
+        plottingmean(ax3,unscaledconf,'klaufhalli','Óskalað DMU kynbótamat','Klaufhalli')
+        plottingmean(ax4,unscaledconf,'jugurfesta','','Júgurfesta')
+        plottingmean(ax4,unscaledconf,'jugurband','','Júgurband')
+        plottingmean(ax4,unscaledconf,'jugurdypt','','Júgurdýpt')
+        plottingmean(ax5,unscaledconf,'spenalengd','Óskalað DMU kynbótamat','Spenalengd')
+        plottingmean(ax5,unscaledconf,'spenathykkt','Óskalað DMU kynbótamat','Spenaþykkt')
+        plottingmean(ax5,unscaledconf,'spenastada','Óskalað DMU kynbótamat','Spenastaða')
+        plottingmean(ax6,unscaledconf,'mjaltir','','Mjaltir')
+        plottingmean(ax6,unscaledconf,'skap','','Skap')
+
+        fig.suptitle(f'Meðal óskalað kynbótamat árganga {yearmonth}', fontsize=26, fontweight ="bold")
+        plt.subplots_adjust(left=0.05, bottom=0.07, right=0.97, top=0.94, wspace=0.05, hspace=0.09)
+
+        fig.set_size_inches([18, 9])
+        plt.savefig(f'../{yearmonth}/figures/unscaledconformationmeanbybirthyear{yearmonth}.png')
+
+        if pltshow == 1:
+            plt.show()
 
     if seperate_files == 1:
         print('Conformation results written to seperate file')
@@ -581,8 +742,8 @@ if conf_results == 1:
         confphgdf = solutions(confsolph, confphgdf, 4, 'malabreidd','code_id')
         confphgdf = solutions(confsolph, confphgdf, 5, 'malahalli','code_id')
         confphgdf = solutions(confsolph, confphgdf, 6, 'malabratti','code_id')
-        confphgdf = solutions(confsolph, confphgdf, 7, 'stada_haekla_hlid','code_id')
-        confphgdf = solutions(confsolph, confphgdf, 8, 'stada_haekla_aftan','code_id')
+        confphgdf = solutions(confsolph, confphgdf, 7, 'stada_hh','code_id')
+        confphgdf = solutions(confsolph, confphgdf, 8, 'stada_ha','code_id')
         confphgdf = solutions(confsolph, confphgdf, 9, 'klaufhalli','code_id')
         confphgdf = solutions(confsolph, confphgdf, 10, 'jugurfesta','code_id')
         confphgdf = solutions(confsolph, confphgdf, 11, 'jugurband','code_id')
@@ -598,8 +759,8 @@ if conf_results == 1:
         confphgdf['malabreidd'] = scaling(confphgdf,'malabreidd',1, conf_ave)
         confphgdf['malahalli'] = scaling(confphgdf,'malahalli',1, conf_ave)
         confphgdf['malabratti'] = scaling(confphgdf,'malabratti',1, conf_ave)
-        confphgdf['stada_haekla_hlid'] = scaling(confphgdf,'stada_haekla_hlid',1, conf_ave)
-        confphgdf['stada_haekla_aftan'] = scaling(confphgdf,'stada_haekla_aftan',1, conf_ave)
+        confphgdf['stada_hh'] = scaling(confphgdf,'stada_hh',1, conf_ave)
+        confphgdf['stada_ha'] = scaling(confphgdf,'stada_ha',1, conf_ave)
         confphgdf['klaufhalli'] = scaling(confphgdf,'klaufhalli',1, conf_ave)
         confphgdf['jugurfesta'] = scaling(confphgdf,'jugurfesta',1, conf_ave)
         confphgdf['jugurband'] = scaling(confphgdf,'jugurband',1, conf_ave)
@@ -623,7 +784,7 @@ else:
 
 #Reading rankorder SOL file, collecting and scaling results and counting daughters
 #Write results to disc if option above set to 1
-if rankorder_results == 1:
+if (rankorder_collect == 1):
 
     #Reading sol files
     rankordersol = readingfilefwf(rankordersolfile,solcolumns,sol_widths)
@@ -633,6 +794,10 @@ if rankorder_results == 1:
     rankorderdf = radnrkodi['id'].copy()  #Creating a dataframe to merge trait results
     rankorderdf = solutions(rankordersolids, rankorderdf, 1, 'mjaltarod','id')
     rankorderdf = solutions(rankordersolids, rankorderdf, 2, 'gaedarod','id')
+
+    if collectunscaled == 1:
+        unscaledrank = rankorderdf[['id','mjaltarod','gaedarod']]
+
     #Reading own observations files
     ownobs_rankorder = ownobs(rankorderobs,rankorder_columns)
     #Creating average groups to scale
@@ -646,9 +811,26 @@ if rankorder_results == 1:
 
     rankorderdf = countingoff(ownobs_rankorder,'mjaltarod','offrankorder', rankorderdf)
 
+    if plotunscaled == 1:
+        unscaledrank['BY'] = (unscaledrank.id.astype(str).str[:4]).astype(int)
+        #Creating figure and 16 subplots
+        fig, ((ax1, ax2))  = plt.subplots(2, sharex=True)
+
+        plottingmean(ax1,unscaledrank,'mjaltarod','Óskalað DMU kynbótamat','Mjaltaröð')
+        plottingmean(ax2,unscaledrank,'gaedarod','Óskalað DMU kynbótamat','Gæðaröð')
+
+        fig.suptitle(f'Meðal óskalað kynbótamat árganga {yearmonth}', fontsize=26, fontweight ="bold")
+        plt.subplots_adjust(left=0.05, bottom=0.07, right=0.97, top=0.94, wspace=0.05, hspace=0.09)
+
+        fig.set_size_inches([18, 9])
+        plt.savefig(f'../{yearmonth}/figures/unscaledrankorderymeanbybirthyear{yearmonth}.png')
+
+        if pltshow == 1:
+            plt.show()
+
     if seperate_files == 1:
         print('Rankorder results written to seperate file')
-        rank_results = rankorderdf[rankorderebv_columns].astype(float).round().astype(int)
+        rank_results = rankorderdf[rankorderebv_columns].astype(float).round(2).astype(int)
         rank_results.to_csv(rankorderebv, index=False, header=False, sep=' ')
         print(f'Rankorder results written to {rankorderebv}')
 
@@ -678,7 +860,7 @@ else:
 
 #Reading longevity SOL file, collecting and scaling results and counting daughters
 #Write results to disc if option above set to 1
-if long_results == 1:
+if (long_collect == 1):
 
     #Reading sol files
     longsol = readingfilefwf(longsolfile,solcolumns,sol_widths)
@@ -689,9 +871,10 @@ if long_results == 1:
     longdf = solutions(longsolids, longdf, 1, 'L1','id')
     longdf = solutions(longsolids, longdf, 2, 'L2','id')
     longdf = solutions(longsolids, longdf, 3, 'L3','id')
-    # longdf = longdf.loc[(longdf['id'] < 900000000000000)]
-    # unscaledlong = longdf.copy()
-    # unscaledlong.columns = ['id', 'L1x', 'L2x', 'L3x']
+
+    if collectunscaled == 1:
+        unscaledlong = longdf[['id','L1','L2','L3']]
+
     #Reading own observations files
     ownobs_long = ownobs(longobs,longobs_columns)
     #Creating average groups to scale
@@ -708,9 +891,27 @@ if long_results == 1:
     longdf = countingoff(ownobs_long,'L2','offlong2', longdf)
     longdf = countingoff(ownobs_long,'L3','offlong3', longdf)
 
+    if plotunscaled == 1:
+        unscaledlong['BY'] = (unscaledlong.id.astype(str).str[:4]).astype(int)
+        #Creating figure and 16 subplots
+        fig, ((ax1))  = plt.subplots(1, sharex=True)
+
+        plottingmean(ax1,unscaledlong,'L1','Óskalað DMU kynbótamat','Ending, dagar 1. burður - lok 1. mjalt.')
+        plottingmean(ax1,unscaledlong,'L2','Óskalað DMU kynbótamat','Ending, dagar 1. burður - lok 2. mjalt.')
+        plottingmean(ax1,unscaledlong,'L3','Óskalað DMU kynbótamat','Ending, dagar 1. burður - lok 3. mjalt.')
+
+        fig.suptitle(f'Meðal óskalað kynbótamat árganga {yearmonth}', fontsize=26, fontweight ="bold")
+        plt.subplots_adjust(left=0.05, bottom=0.07, right=0.97, top=0.94, wspace=0.05, hspace=0.09)
+
+        fig.set_size_inches([10, 7])
+        plt.savefig(f'../{yearmonth}/figures/unscaledlongevitymeanbybirthyear{yearmonth}.png')
+
+        if pltshow == 1:
+            plt.show()
+
     if seperate_files == 1:
         print('Longgevity results written to seperate file')
-        long_results = longdf[longebv_columns].astype(float).round().astype(int)
+        long_results = longdf[longebv_columns].astype(float).round(2).astype(int)
         long_results.to_csv(longebv, index=False, header=False, sep=' ')
         print(f'Rankorder results written to {longebv}')
 
@@ -742,7 +943,9 @@ else:
 #-------------------------------------------------------------
 
 
-
+#---------------------------------------------------------------------------
+# PART 3 - Collection of all results and write to file
+#---------------------------------------------------------------------------
 #-------------------------------------------------------------
 #-------------------------------------------------------------
 #Program reads imported datafiles with EBVs for yield, scs, persistancy and
@@ -755,33 +958,40 @@ else:
 if collectresults == 1:
     results = radnrkodi['id'].copy()  #Creating a dataframe to merge trait results
 
-    if yield_results == 0:
+    if (yield_collect == 0):
         results = combineresultscsv(results,yieldebv,yieldebv_columns)
-    elif yield_results == 1:
-        results = combineresultsdf(results,yielddf,yieldebv_columns)
+    elif (yield_collect == 1):
+        results = combineresultsdf(results,yield_results,yieldebv_columns)
 
-    if fertility_results == 0:
+    if (fertility_collect == 0):
         results = combineresultscsv(results,fertilityebv,fertilityebv_columns)
-    elif fertility_results == 1:
+    elif (fertility_collect == 1):
         results = combineresultsdf(results,fertilitydf,fertilityebv_columns)
 
-    if conf_results == 0:
+    if (conf_collect == 0):
         results = combineresultscsv(results,confebv,confebv_columns)
-    elif conf_results == 1:
+    elif (conf_collect == 1):
         results = combineresultsdf(results,confdf,confebv_columns)
 
-    if rankorder_results == 0:
+    if (rankorder_collect == 0):
         results = combineresultscsv(results,rankorderebv,rankorderebv_columns)
-    elif rankorder_results == 1:
+    elif (rankorder_collect == 1):
         results = combineresultsdf(results,rankorderdf,rankorderebv_columns)
 
-    if long_results == 0:
+    if (long_collect == 0):
         results = combineresultscsv(results,longebv,longebv_columns)
-    elif long_results == 1:
+    elif (long_collect == 1):
         results = combineresultsdf(results,longdf,longebv_columns)
 
-    results = combineresultsfwf(results,accyield,accyield_columns,widths_accyield) #accuracy yield
-    results = combineresultsfwf(results,accscs,accscs_columns,widths_accscs) #accuracy scs
+    results = combineresultsfwf(results,accyield,accyield_columns,widths_accyield,'offyield','yield_acc') #accuracy yield
+    results = combineresultsfwf(results,accscs,accscs_columns,widths_accscs,'offscs','scs_acc') #accuracy scs
+
+    results['yield_acc'] = results['yield_acc'] * 100
+    results['scs_acc'] = results['scs_acc'] * 100
+
+    results[['offyield', 'yield_acc','offscs', 'scs_acc']
+        ] = results[['offyield', 'yield_acc'
+        ,'offscs', 'scs_acc']].fillna(0).astype(int)
 
     results = results[(results['my1'].notnull().astype(int) == 1)] #only results for animals in yield file
 
@@ -828,6 +1038,12 @@ if collectresults == 1:
     results['mjaltir_t'] = (results['mjaltir'] * 0.6 +
                             results['mjaltarod'] * 0.4 )
 
+#Creation of a total grade for milking
+    results['skrokkur'] = (results['boldypt'] * 0.25 +
+                            results['utlogur'] * 0.25 +
+                            results['yfirlina'] * 0.2 +
+                            results['malabreidd'] * 0.3)
+
 #Creation of a total grade for bulls with grade for longevity
     results.loc[(results['offlong1'] >= 20), 'total'] = (
                     results['yieldtotal']*0.36 +
@@ -850,183 +1066,193 @@ if collectresults == 1:
                     results['skap']*0.10 +
                     results['L3']*0.0)
 
-    print(x.iloc[500:515])
-    print(x.info())
-
     print(results.iloc[500000:500015])
     print(results.info())
 #Scaled EBVs written to disc
     if writebranda == 1:
-        results.loc[:, 'skap2'] = results['skap']
-        branda = results[brandafile_columns].astype(int)  #72 columns
+        branda = results[brandafile_columns].fillna(0, downcast='infer').astype(int)  #76 columns
 
         np.savetxt(brandafile, branda,
         fmt='%15s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
 %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
 %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
+%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
 %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s')
-
+%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s')
 
         print(branda.iloc[500000:500015])
         print(branda.info())
 
-if collectdmufiles == 1:
     #---------------------------------------------------------------------------
-    #This function that collects dmu1 and dmu5 files into one directory
+    # PART 4 - Extra steps
     #---------------------------------------------------------------------------
-    def collectfiles(trait,year):
-        path = f'../DMU/{year}/dmufiles' #creation of dir dmufiles
-        isExist = os.path.exists(path) #first program checks if dir already exits
-        if not isExist:
-            os.makedirs(path);
-            print(f'{path} is created!')
-        else:
-            print(f'{path} exists!')
+        if nautastod == 1:
+            # ----------------------------------------------------
+            #Counting the number of daughters bulls have in the pedigree file
+            # ----------------------------------------------------
+            dams = ped.loc[ped['sex'] == 2]
+            dams.loc[:,'sire_count'] = dams.groupby('sire')['sire'].transform('count')
+            sires = dams[['sire', 'sire_count']]
+            sires.columns = ['id', 'daughters']
+            sires = sires.drop_duplicates(subset=['id'])
 
-        path = f'../DMU/{year}/dmufiles/dmu1_{trait}' #copies dmu1 from trait file
-        isExist = os.path.exists(path)                #and renames with trait
-        if not isExist:                               #checks if file exists already
-            shutil.copy(f'../DMU/{year}/{trait}/dmu1', path)
-            print(f'{path} is created!')
-        else:
-            print(f'{path} exists!')
+            #Merging with saman dataframe so sires have their daughter count
+            brandaped = pd.merge(left=branda, right=sires, on='id', how='outer')
+            #Merging with pedigree to see bullno and farm id
+            brandaped = pd.merge(left=ped[['id','sex','bullno', 'name', 'farm']], right=brandaped, on='id')
 
-        path = f'../DMU/{year}/dmufiles/dmu5_{trait}' #same as above, dmu5 files copied
-        isExist = os.path.exists(path)
-        if not isExist:
-            shutil.copy(f'../DMU/{year}/{trait}/dmu5', path)
-            print(f'{path} is created!')
-        else:
-            print(f'{path} exists!')
+            # ----------------------------------------------------
+            #This creates an excel file with bulls from Nautstöðin á Hesti
+            # ----------------------------------------------------
+            nautastod = brandaped.loc[(brandaped['bullno'] > 0) & (brandaped['farm'] == 'Nautastöðin Hesti')]
+            #Sorting the dataframe by birthyear and nautastöðvarnúmer
+            nautastod['BY'] = (nautastod.id.astype(str).str[:4]).astype(int)
+            nautastod = nautastod.sort_values(by=['BY','bullno'],ascending=False)
+            #Correct order of columns for excel file
+            # Rename the traits for excel file
+            # nautastod.columns = [] ---> possible to rename columns
+            # Creating the excel file
+            nautastod.to_excel(f'../{yearmonth}/results/nautastodblup{yearmonth}.xlsx', index=False, header=True)
 
+        if plottingbranda == 1:                                       #---------------------------------------------------------------------------
+            #---------------------------------------------------------------------------
+            #If plotting == 1 then program will create plots with genetic trends
+            #Functions that create plots are in kynbotamat_module
+            #---------------------------------------------------------------------------
+            branda['BY'] = (branda.id.astype(str).str[:4]).astype(int)
+            branda2000 = branda.loc[(branda['BY'] >= 2000 ) & (branda['BY'] <= 3000 )]
 
-    collectfiles('fertility',yearmonth)
-    collectfiles('conformation',yearmonth)
-    collectfiles('rankorder',yearmonth)
+            #Mean EBV per birth year is found for all traits
+            argangar = ((branda2000.groupby('BY')['my1','my2','my3','fy1','fy2','fy3',
+            'py1','py2','py3','fp1','fp2','fp3',
+            'pp1','pp2','pp3','scs1','scs2','scs3',
+            'milkper', 'fatper', 'protper',
+            'fer_lact1','fer_lact2','fer_lact3','CR0','ICF','IFL',
+            'boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahalli', 'malabratti',
+            'stada_hh', 'stada_ha', 'klaufhalli', 'jugurfesta',
+            'jugurband', 'jugurdypt', 'spenalengd', 'spenathykkt', 'spenastada',
+            'mjaltir', 'skap','mjaltarod', 'gaedarod','L1','L2','L3',
+            'myt','fyt','pyt','fpt','ppt',
+            'yieldtotal','fertility','scst','jugur','spenar','mjaltir_t','total'
+                ].mean()).reset_index()).astype(float).round(2).astype(int)
+            argangar.to_csv(f'../{yearmonth}/results/meanargangar.txt' , index=False, header=True, sep=' ')
 
+            #Creating figure and 16 subplots
+            fig, ((ax1, ax2, ax3, ax4),
+                (ax5, ax6, ax7, ax8),
+                ( ax9, ax10 ,ax11, ax12),
+                (ax13, ax14, ax15, ax16),
+                (ax17, ax18, ax19, ax20))  = plt.subplots(5,4, sharey=True, sharex=True)
 
-if plotting == 1:
-    #---------------------------------------------------------------------------
-    #If plotting == 1 then program will create plots with genetic trends
-    #Functions that create plots are in kynbotamat_module
-    #---------------------------------------------------------------------------
-    branda['BY'] = (branda.id.astype(str).str[:4]).astype(int)
-    branda2000 = branda.loc[(branda['BY'] >= 2000 )]
+            #This figure shows regression
+            plottingmeansns(ax1,argangar,'BY','yieldtotal','Skalaðar einkunnir','Afurðir heildareinkun')
+            plottingmeansns(ax2,argangar,'BY','myt','','Mjólk kg')
+            plottingmeansns(ax3,argangar,'BY','fyt','','Fita kg')
+            plottingmeansns(ax4,argangar,'BY','pyt','','Prótein kg')
 
-    #Mean EBV per birth year is found for all traits
-    argangar = (branda2000.groupby('BY')['my1','my2','my3','fy1','fy2','fy3',
-    'py1','py2','py3','fp1','fp2','fp3',
-    'pp1','pp2','pp3','scs1','scs2','scs3',
-    'milkper', 'fatper', 'protper',
-    'fer_lact1','fer_lact2','fer_lact3','CR0','ICF','IFL',
-    'boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahalli', 'malabratti',
-    'stada_haekla_hlid', 'stada_haekla_aftan', 'klaufhalli', 'jugurfesta',
-    'jugurband', 'jugurdypt', 'spenalengd', 'spenathykkt', 'spenastada',
-    'mjaltir', 'skap','mjaltarod', 'gaedarod','longevity',
-    'myt','fyt','pyt','fpt','ppt',
-    'yieldtotal','fertility','scs','jugur','spenar','mjaltir_t','skap2','total'
-        ].mean()).reset_index()
-    argangar.to_csv('../results/meanargangar.txt' , index=False, header=True, sep=' ')
+            plottingmeansns(ax5,argangar,'BY','fpt','Skalaðar einkunnir','Fitu %')
+            plottingmeansns(ax6,argangar,'BY','ppt','','Prótein %')
+            plottingmeansns(ax7,argangar,'BY','milkper','','Mjólkurúthald')
+            plottingmeansns(ax8,argangar,'BY','scst','','Frumutala')
 
-    xticks = [2000,2002,2004,2006,2008,2010,2012,2014,2016,2018,2020]
-    yticks = [75,80,85,90,95,100,105,110]
+            plottingmeansns(ax9,argangar,'BY','CR0','Skalaðar einkunnir','Kvígur, fanghlutfall við fyrstu sæðingu')
+            plottingmeansns(ax10,argangar,'BY','ICF','','Bil milli burðar og fyrstu sæðingar')
+            plottingmeansns(ax11,argangar,'BY','IFL','','Bil milli fyrstu og seinustu sæðingar')
+            plottingmeansns(ax12,argangar,'BY','L3','','Ending, 1. burður til loka 3. mjaltaskeiðs')
 
-    #Creating figure and 16 subplots
-    fig, ((ax1, ax2, ax3, ax4),
-        (ax5, ax6, ax7, ax8),
-        ( ax9, ax10 ,ax11, ax12),
-        (ax13, ax14, ax15, ax16))  = plt.subplots(4,4, sharey=True, sharex=True)
+            plottingmeansns(ax13,argangar,'BY','malabreidd','Skalaðar einkunnir','Malarbreidd')
+            plottingmeansns(ax14,argangar,'BY','boldypt','','Boldýpt')
+            plottingmeansns(ax15,argangar,'BY','utlogur','Skalaðar einkunnir','Útlögur')
+            plottingmeansns(ax16,argangar,'BY','skap','','Skap')
 
-    #This figure shows regression
-    plottingmeansns(ax1,argangar,'BY','yieldtotal','Skalaðar einkunnir','Afurðir heildareinkun')
-    plottingmeansns(ax2,argangar,'BY','myt','','Mjólk kg')
-    plottingmeansns(ax3,argangar,'BY','fyt','','Fita kg')
-    plottingmeansns(ax4,argangar,'BY','pyt','','Prótein kg')
+            plottingmeansns(ax17,argangar,'BY','mjaltir_t','Skalaðar einkunnir','Mjaltir, heildareinkunn')
+            plottingmeansns(ax18,argangar,'BY','jugur','','Júgur')
+            plottingmeansns(ax19,argangar,'BY','spenar','','Spenar')
+            plottingmeansns(ax20,argangar,'BY','total','','Heildareinkunn')
 
-    plottingmeansns(ax5,argangar,'BY','fpt','Skalaðar einkunnir','Fitu %')
-    plottingmeansns(ax6,argangar,'BY','ppt','','Prótein %')
-    plottingmeansns(ax7,argangar,'BY','milkper','','Mjólkurúthald')
-    plottingmeansns(ax8,argangar,'BY','scs','','Frumutala')
+            fig.suptitle(f'Aðhvarf á meðalkynbótamat árganga {yearmonth}', fontsize=26, fontweight ="bold")
+            plt.subplots_adjust(left=0.07, bottom=0.08, right=0.96, top=None, wspace=0.05, hspace=0.11)
+            fig.set_size_inches([18, 9])
+            plt.savefig(f'../{yearmonth}/figures/regressionbirthyear{yearmonth}.png')
 
-    plottingmeansns(ax9,argangar,'BY','CR0','Skalaðar einkunnir','Kvígur, fanghlutfall við fyrstu sæðingu')
-    plottingmeansns(ax10,argangar,'BY','ICF','','Bil milli burðar og fyrstu sæðingar')
-    plottingmeansns(ax11,argangar,'BY','IFL','','Bil milli fyrstu og seinustu sæðingar')
-    plottingmeansns(ax12,argangar,'BY','boldypt','','Boldýpt')
+            #Creating figure and 16 subplots
+            fig, ((ax1, ax2, ax3, ax4),
+                (ax5, ax6, ax7, ax8),
+                ( ax9, ax10 ,ax11, ax12),
+                (ax13, ax14, ax15, ax16))  = plt.subplots(4,4, sharey=True, sharex=True)
 
-    plottingmeansns(ax13,argangar,'BY','utlogur','Skalaðar einkunnir','Útlögur')
-    plottingmeansns(ax14,argangar,'BY','jugur','','Júgur')
-    plottingmeansns(ax15,argangar,'BY','spenar','','Spenar')
-    plottingmeansns(ax16,argangar,'BY','total','','Heildareinkunn')
+            plottingmean(ax1,branda2000,'my1','Skalaðar einkunnir','Mjólk kg 1. mjalt')
+            plottingmean(ax1,branda2000,'my2','Skalaðar einkunnir','Mjólk kg 2. mjalt')
+            plottingmean(ax1,branda2000,'my3','Skalaðar einkunnir','Mjólk kg 3. mjalt')
+            plottingmean(ax2,branda2000,'fy1','','Fita kg 1. mjalt')
+            plottingmean(ax2,branda2000,'fy2','','Fita kg 2. mjalt')
+            plottingmean(ax2,branda2000,'fy3','','Fita kg 3. mjalt')
+            plottingmean(ax3,branda2000,'py1','','Prótein kg 1. mjalt')
+            plottingmean(ax3,branda2000,'py2','','Prótein kg 2. mjalt')
+            plottingmean(ax3,branda2000,'py3','','Prótein kg 3. mjalt')
+            plottingmean(ax4,branda2000,'yieldtotal','','Heildarafurðaeinkun')
 
-    fig.suptitle('Aðhvarf á meðalkynbótamat árganga', fontsize=26, fontweight ="bold")
-    plt.subplots_adjust(left=0.07, bottom=0.08, right=0.96, top=None, wspace=0.05, hspace=0.11)
-    fig.set_size_inches([20, 10])
-    plt.savefig('../figures/regressionbirthyear20211127.png')
+            plottingmean(ax5,branda2000,'fp1','Skalaðar einkunnir','Fitu % 1. mjalt')
+            plottingmean(ax5,branda2000,'fp2','Skalaðar einkunnir','Fitu % 2. mjalt')
+            plottingmean(ax5,branda2000,'fp3','Skalaðar einkunnir','Fitu % 3. mjalt')
+            plottingmean(ax6,branda2000,'pp1','','Prótein % 1. mjalt')
+            plottingmean(ax6,branda2000,'pp2','','Prótein % 2. mjalt')
+            plottingmean(ax6,branda2000,'pp3','','Prótein % 3. mjalt')
+            plottingmean(ax7,branda2000,'scs1','','Frumutala 1. mjalt')
+            plottingmean(ax7,branda2000,'scs2','','Frumutala 2. mjalt')
+            plottingmean(ax7,branda2000,'scs3','','Frumutala 3. mjalt')
+            plottingmean(ax8,branda2000,'milkper','','Mjólkurúthald')
+            plottingmean(ax8,branda2000,'fatper','','Fituúthald')
+            plottingmean(ax8,branda2000,'protper','','Próteinúthald')
 
-    #Creating figure and 16 subplots
-    fig, ((ax1, ax2, ax3, ax4),
-        (ax5, ax6, ax7, ax8),
-        ( ax9, ax10 ,ax11, ax12),
-        (ax13, ax14, ax15, ax16))  = plt.subplots(4,4, sharey=True, sharex=True)
+            plottingmean(ax9,branda2000,'CR0','Skalaðar einkunnir','Kvígur, fanghlutfall við fyrstu sæðingu')
+            plottingmean(ax9,branda2000,'ICF','Skalaðar einkunnir','Bil milli burðar og fyrstu sæðingar')
+            plottingmean(ax9,branda2000,'IFL','Skalaðar einkunnir','Bil milli fyrstu og seinustu sæðingar')
+            plottingmean(ax10,branda2000,'boldypt','','Boldýpt')
+            plottingmean(ax10,branda2000,'utlogur','','Útlögur')
+            plottingmean(ax10,branda2000,'yfirlina','','Yfirlína')
+            plottingmean(ax11,branda2000,'malabreidd','','Malabreidd')
+            plottingmean(ax11,branda2000,'malahalli','','Malahalli')
+            plottingmean(ax11,branda2000,'malabratti','','Malabratti')
+            plottingmean(ax12,branda2000,'stada_hh','','Staða hækla - hlið')
+            plottingmean(ax12,branda2000,'stada_ha','','Staða hækla - aftan')
+            plottingmean(ax12,branda2000,'klaufhalli','','Klaufhalli')
 
-    plottingmean(ax1,branda2000,'my1','Skalaðar einkunnir','Mjólk kg 1. mjalt')
-    plottingmean(ax1,branda2000,'my2','Skalaðar einkunnir','Mjólk kg 2. mjalt')
-    plottingmean(ax1,branda2000,'my3','Skalaðar einkunnir','Mjólk kg 3. mjalt')
-    plottingmean(ax2,branda2000,'fy1','','Fita kg 1. mjalt')
-    plottingmean(ax2,branda2000,'fy2','','Fita kg 2. mjalt')
-    plottingmean(ax2,branda2000,'fy3','','Fita kg 3. mjalt')
-    plottingmean(ax3,branda2000,'py1','','Prótein kg 1. mjalt')
-    plottingmean(ax3,branda2000,'py2','','Prótein kg 2. mjalt')
-    plottingmean(ax3,branda2000,'py3','','Prótein kg 3. mjalt')
-    plottingmean(ax4,branda2000,'yieldtotal','','Heildarafurðaeinkun')
+            plottingmean(ax13,branda2000,'jugurfesta','Skalaðar einkunnir','Júgurfesta')
+            plottingmean(ax13,branda2000,'jugurband','Skalaðar einkunnir','Júgurband')
+            plottingmean(ax13,branda2000,'jugurdypt','Skalaðar einkunnir','Júgurdýpt')
+            plottingmean(ax14,branda2000,'spenalengd','','Spenalengd')
+            plottingmean(ax14,branda2000,'spenathykkt','','Spenaþykkt')
+            plottingmean(ax14,branda2000,'spenastada','','Spenastaða')
+            plottingmean(ax15,branda2000,'mjaltir','','Mjaltir')
+            plottingmean(ax15,branda2000,'skap','','Skap')
+            plottingmean(ax15,branda2000,'L3','','Ending, 1. burður til loka 3. mjaltaskeiðs')
+            plottingmean(ax16,branda2000,'total','','Heildareinkunn')
 
-    plottingmean(ax5,branda2000,'fp1','Skalaðar einkunnir','Fitu % 1. mjalt')
-    plottingmean(ax5,branda2000,'fp2','Skalaðar einkunnir','Fitu % 2. mjalt')
-    plottingmean(ax5,branda2000,'fp3','Skalaðar einkunnir','Fitu % 3. mjalt')
-    plottingmean(ax6,branda2000,'pp1','','Prótein % 1. mjalt')
-    plottingmean(ax6,branda2000,'pp2','','Prótein % 2. mjalt')
-    plottingmean(ax6,branda2000,'pp3','','Prótein % 3. mjalt')
-    plottingmean(ax7,branda2000,'scs1','','Frumutala 1. mjalt')
-    plottingmean(ax7,branda2000,'scs2','','Frumutala 2. mjalt')
-    plottingmean(ax7,branda2000,'scs3','','Frumutala 3. mjalt')
-    plottingmean(ax8,branda2000,'milkper','','Mjólkurúthald')
-    plottingmean(ax8,branda2000,'fatper','','Fituúthald')
-    plottingmean(ax8,branda2000,'protper','','Próteinúthald')
+            fig.suptitle(f'Meðalkynbótamat árganga {yearmonth}', fontsize=26, fontweight ="bold")
+            plt.subplots_adjust(left=0.05, bottom=0.07, right=0.97, top=0.94, wspace=0.05, hspace=0.09)
 
-    plottingmean(ax9,branda2000,'CR0','Skalaðar einkunnir','Kvígur, fanghlutfall við fyrstu sæðingu')
-    plottingmean(ax9,branda2000,'ICF','Skalaðar einkunnir','Bil milli burðar og fyrstu sæðingar')
-    plottingmean(ax9,branda2000,'IFL','Skalaðar einkunnir','Bil milli fyrstu og seinustu sæðingar')
-    plottingmean(ax10,branda2000,'boldypt','','Boldýpt')
-    plottingmean(ax10,branda2000,'utlogur','','Útlögur')
-    plottingmean(ax10,branda2000,'yfirlina','','Yfirlína')
-    plottingmean(ax11,branda2000,'malabreidd','','Malabreidd')
-    plottingmean(ax11,branda2000,'malahalli','','Malahalli')
-    plottingmean(ax11,branda2000,'malabratti','','Malabratti')
-    plottingmean(ax12,branda2000,'stada_haekla_hlid','','Staða hækla - hlið')
-    plottingmean(ax12,branda2000,'stada_haekla_aftan','','Staða hækla - aftan')
-    plottingmean(ax12,branda2000,'klaufhalli','','Klaufhalli')
+            fig.set_size_inches([18, 9])
+            plt.savefig(f'../{yearmonth}/figures/meanbybirthyear{yearmonth}.png')
 
-    plottingmean(ax13,branda2000,'jugurfesta','Skalaðar einkunnir','Júgurfesta')
-    plottingmean(ax13,branda2000,'jugurband','Skalaðar einkunnir','Júgurband')
-    plottingmean(ax13,branda2000,'jugurdypt','Skalaðar einkunnir','Júgurdýpt')
-    plottingmean(ax14,branda2000,'spenalengd','','Spenalengd')
-    plottingmean(ax14,branda2000,'spenathykkt','','Spenaþykkt')
-    plottingmean(ax14,branda2000,'spenastada','','Spenastaða')
-    plottingmean(ax15,branda2000,'mjaltir','','Mjaltir')
-    plottingmean(ax15,branda2000,'skap','','Skap')
-    plottingmean(ax16,branda2000,'total','','Heildareinkunn')
+            #Correlation heat map for traits in dataframe!
+            sns.set(font_scale=0.6)
+            plt.figure(figsize=(8,8))
+            sns.heatmap(branda2000[['myt','fyt','pyt','fpt','ppt','milkper', 'fatper', 'protper',
+            'yieldtotal','scst','CR0','ICF','IFL', 'fertility',
+            'boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahalli', 'malabratti',
+            'stada_hh', 'stada_ha', 'klaufhalli', 'jugurfesta',
+            'jugurband', 'jugurdypt', 'spenalengd', 'spenathykkt', 'spenastada',
+            'mjaltir', 'skap','mjaltarod', 'gaedarod','L1','L2','L3', 'total'
+            ]].corr(), annot=True, cmap='coolwarm')
+            plt.title('Fylgni eiginleika (skalað kynbótamat)', fontsize = 20)
 
-    fig.suptitle('Meðalkynbótamat árganga', fontsize=26, fontweight ="bold")
-    plt.subplots_adjust(left=0.05, bottom=0.07, right=0.97, top=0.94, wspace=0.05, hspace=0.09)
+            plt.subplots_adjust(left=0.06, bottom=0.09, right=1, top=0.95, wspace=0.20, hspace=0.20)
 
-    fig.set_size_inches([20, 10])
-    plt.savefig('../figures/meanbybirthyear20211127.png')
+            fig.set_size_inches([18, 9])
+            plt.savefig(f'../{yearmonth}/figures/correlationheatmap{yearmonth}.png')
 
-    # plt.show()
-
-
-
+            if pltshow == 1:
+                plt.show()
 
 #
