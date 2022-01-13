@@ -5,7 +5,7 @@
 35
 1995
 692000
-2013
+2017
 10000
 2
 '/dmu_data/tdm.csv'
@@ -22,22 +22,22 @@
 ../from_huppa/Skopulag_27562.txt
 ../from_huppa/Mjaltaathugun_26464.txt
 
-1. Maximum number of records, records excluded in data reading not included.
-2. Maximum number of cows
-3. Maximum number of herds
-4. Maximum number of years
-5. First year allowed.
-6. Maximum number in pedegree file
-7. Year for standardizing EBV.
-8. Maximum number of problematic animals in the pedegree
-9. Minimum number of records in lactation
-10. Name of data file
-11. Name of sorted pedigree file
-12. Name of unsorted pedigree file
-13. Year used for scaling
-14. Scaling mean
-15. Scaling STD
-16. Year and month of breeding value estimation
+1. Year and month of genetic evaluation
+2. Maximum number of records, records excluded in data reading not included.
+3. Maximum number of cows
+4. Maximum number of herds
+5. Maximum number of years
+6. First year allowed.
+7. Maximum number in pedegree file
+8. Year for standardizing EBV.
+9. Maximum number of problematic animals in the pedegree
+10. Minimum number of records in lactation
+11. Name of data file
+12. Name of sorted pedigree file
+13. Name of unsorted pedigree file
+14. Year used for scaling
+15. Scaling mean
+16. Scaling STD
 17. Old tdm file
 18. New tdm file
 19. Fertilty - Insemination file from Huppa
@@ -45,4 +45,3 @@
 21. Fertilty - Date of the data collection from Huppa!
 22. Conformation file
 23. Rank order file
-24. Name of final file to be read by Huppa
