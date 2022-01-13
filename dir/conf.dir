@@ -15,7 +15,7 @@ Estimation of breeding values for 17 conformation traits
 $ANALYSE 12 2 0 0
 
 
-$DATA  ASCII (4,17,-999) ../../../dmu_data/dmu_conformation.txt
+$DATA  ASCII (4,17,-999) ../../dmu_data/dmu_conformation.txt
 
 
 $VARIABLE
@@ -100,7 +100,7 @@ $MODEL
 0
 
 
-$VAR_STR  1 PED 6 RANDOM 1.0 ASCII ../../../dmu_data/dmu_ped.txt
+$VAR_STR  1 PED 6 RANDOM 1.0 ASCII ../../dmu_data/dmu_ped.txt
 
 $PRIOR conf.par
 

@@ -13,7 +13,7 @@ Kynbotamat TDM frumutala
 
 $ANALYSE 12 2 0 0
 
-$DATA  ASCII (5,23,-98) ../../../dmu_data/tdm2.dat
+$DATA  ASCII (5,23,-98) ../../dmu_data/tdm2.dat
 
 $VARIABLE
 ID hyp htd cac burdman
@@ -38,7 +38,7 @@ $MODEL
 1 3
 2 3
 
-$VAR_STR 2 PED 6 RANDOM 1.0 ASCII ../../../dmu_data/dmu_ped.txt
+$VAR_STR 2 PED 6 RANDOM 1.0 ASCII ../../dmu_data/dmu_ped.txt
 
 $PRIOR scs.par
 

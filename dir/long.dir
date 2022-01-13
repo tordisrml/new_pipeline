@@ -14,7 +14,7 @@ Testing of longevity variences
 
 $ANALYSE 12 2 0 0
 
-$DATA  ASCII (5,3,-999) ../../../dmu_data/dmu_long.txt
+$DATA  ASCII (5,3,-999) ../../dmu_data/dmu_long.txt
 
 
 $VARIABLE
@@ -41,7 +41,7 @@ $MODEL
 
 #----------------------------------------------------------------------
 
-$VAR_STR  1 PED 6 RANDOM 1.0 ASCII ../../../dmu_data/dmu_ped.txt
+$VAR_STR  1 PED 6 RANDOM 1.0 ASCII ../../dmu_data/dmu_ped.txt
 
 
 $PRIOR long.par

@@ -21,7 +21,7 @@ from kynbotamat_module import plottingmean
 #Creating DMU trait files
 prepfordmu = 0
 
-preptdm = 0 #run preptdm.f program
+preptdm = 1 #run preptdm.f program
 
 #Create DMU datafiles for these traits
 fertilitydmu = 0
@@ -32,7 +32,8 @@ longdmu = 0
 #Plotting tdm1 datafile to check if OK
 plottdm = 0
 
-accuracytdm = 1
+#Compile and run accuracy fortran programs for yield
+accuracytdm = 0
 #---------------------------------------------------------------------------
 #File with information for program!
 control = pd.read_csv(
@@ -123,7 +124,6 @@ if prepfordmu == 1:
 #---------------------------------------------------------------------------
 # PART 1 - SORT PEDIGREE, MERGE TDM FILES AND RUN PREP_TDM IN SHELL!
 #---------------------------------------------------------------------------
-
 if preptdm == 1 :
     print('Part 1 of program')
     #Name of pedigree file
@@ -131,16 +131,15 @@ if preptdm == 1 :
     sortedped = control.loc[11,'control']
     oldtdm = control.loc[16,'control']
     newtdm = control.loc[17,'control']
-    tdmfile = f'../{yearmonth}{control.loc[9,"control"]}'
+    tdmfile = f'../{yearmonth}/dmu_data/tdm.csv'
 
-    sortingped = f'sort +0.0 -0.15 {pedigreefile} -o {sortedped}'
-
+    # sortingped = f'sort +0.0 -0.15 {pedigreefile} -o {sortedped}'
     combinetdm = f"cat {oldtdm} {newtdm} | awk -F',' '!a[$1$5$6$7$8$9$10$11]++' > {tdmfile}"
-
     subprocess.call(sortingped, shell=True)
     print('Sorting pedigree in shell done')
 
     subprocess.call(combinetdm, shell=True)
+    shutil.copy(tdmfile, f'../tdmfile/tdm{yearmonth}.csv')
     print('Combining TDM files in shell done')
 
     subprocess.check_output('gfortran -o preptdm preptdm_6.f', shell=True)

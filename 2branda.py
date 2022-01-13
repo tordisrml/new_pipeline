@@ -18,39 +18,42 @@ from kynbotamat_module import plottingmean
 from kynbotamat_module import plottingmeansns
 from kynbotamat_module import yieldcollect
 
-#Option to read SOL files for these 3 traits and collect results, 0 means skip
+#Option to read SOL files and collect results, 0 means skip
 # and 1 means SOL files will be read
-yield_collect = 1
-plotyieldPE = 1
+yield_collect = 0
+plotyieldPE = 0
 
-fertility_collect = 1
-conf_collect = 1
-rankorder_collect = 1
-long_collect = 1
+fertility_collect = 0
+conf_collect = 0
+rankorder_collect = 0
+long_collect = 0
 
+#An option to collect phantom parent group results to seperate files.
+#Does not collect for yield only other traits. Should be 0 by defult
 phantomcollection = 0
 
-collectunscaled = 1
-plotunscaled = 1
+#An option to collect and plot unscaled EBVs for the traits. Should be 1 by default.
+collectunscaled = 0
+plotunscaled = 0
 
 #Option to write scaled results for above traits to seperate files to be read
 #later, 0 means skip and 1 means seperate result files will be written to disc
 seperate_files = 1
 
 #Option to collect results for a large datafile to be read by Huppa.
-#--IF ABOVE OPTIONS ARE SET TO 0 --> program will collect results for these three
-    #trait from seperate files!
-#--IF ABOVE OPTIONS ARE SET TO 1 --> program will collect results for these three
-    #trait straight from the program itself.
-#Program always collects results for yield, scs, persistancy and longevity from
-    #imported datafiles.
+#--IF ABOVE OPTIONS ARE SET TO 0 --> program will collect results from seperate files!
+#--IF ABOVE OPTIONS ARE SET TO 1 --> program will collect results straight from the program itself.
 collectresults = 1    #0 means don't, 1 means collect
 
-#Option to write large datafile to disc
-writebranda = 1
+#Option to write large datafile to disc. 1 by defult
+writebranda = 1 #(only when collectresults = 1 )
+#Option to write seperate excel file only with nautastöðvar bulls (only when writebranda = 1 )
 nautastod = 1
+#Option to plot branda file
 plottingbranda = 1
 
+#Option to show plots on computer screen. User must have launched x-ming
+# Should be 0 by default.
 pltshow = 0
 #---------------------------------------------------------------------------
 # PART 1 - Defining variables and file names
@@ -199,7 +202,6 @@ widths_branda = [15,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
     4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4] #
 #---------------------------------------------------------------------------
 
-
 #---------------------------------------------------------------------------
 #---------------------------------------------------------------------------
 #Functions used by program!
@@ -279,6 +281,18 @@ def scaling(df,trait,x,ave_group):
     print(SD)
     df[trait] = (imean+(((df[trait]- mean )*(x) / SD) * isd ))#.astype(float).round().astype(int)
     return df[trait]
+
+#Funtion to write out seperate result files
+#-------------------------------------------------------------
+def seperateresults(df,columns,ebvfile,trait):
+        print(f'{trait} results written to seperate file')
+        dfresults = df[columns].astype(float).round(2)#.astype(int)
+        dfresults[['id']] = dfresults[['id']].astype(int)
+        dfresults.to_csv(ebvfile, index=False, header=False, sep=' ')
+        print(f'{trait} results written to {confebv}')
+
+        print(df.iloc[50000:50015])
+        print(df.info())
 #-------------------------------------------------------------
 #Function to read imported result files and combine to a big one
 #Fixed with files
@@ -504,14 +518,8 @@ if (yield_collect == 1):
             plt.show()
 
     if seperate_files == 1:
-        print('Yield results written to seperate file')
-        yield_results = yielddf[yieldebv_columns].astype(float).round(2)#.astype(int)
-        yield_results.to_csv(yieldebv, index=False, header=False, sep=' ')
+        seperateresults(yielddf,yieldebv_columns,yieldebv,'Yield')
 
-        print(f'Yield results written to {yieldebv}')
-
-    print(yielddf.iloc[500000:500015])
-    print(yielddf.info())
 else:
     print('Rank order results not collected')
 
@@ -594,12 +602,7 @@ if (fertility_collect == 1):
             plt.show()
 
     if seperate_files == 1:
-        print('Fertility results written to seperate file')
-        fer_results = fertilitydf[fertilityebv_columns].astype(float).round(2)#.astype(int)
-        fer_results.to_csv(fertilityebv, index=False, header=False, sep=' ')
-        print(fertilitydf.iloc[50000:50015])
-        print(fertilitydf.info())
-        print(f'Fertility results written to {fertilityebv}')
+        seperateresults(fertilitydf,fertilityebv_columns,fertilityebv,'Fertility')
 
     if phantomcollection == 1:
 
@@ -725,13 +728,7 @@ if (conf_collect == 1):
             plt.show()
 
     if seperate_files == 1:
-        print('Conformation results written to seperate file')
-        conf_results = confdf[confebv_columns].astype(float).round(2)#.astype(int)
-        conf_results.to_csv(confebv, index=False, header=False, sep=' ')
-        print(f'Conformation results written to {confebv}')
-
-        print(confdf.iloc[50000:50015])
-        print(confdf.info())
+        seperateresults(confdf,confebv_columns,confebv,'Conformation')
 
     if phantomcollection == 1:
 
@@ -829,14 +826,7 @@ if (rankorder_collect == 1):
             plt.show()
 
     if seperate_files == 1:
-        print('Rankorder results written to seperate file')
-        rank_results = rankorderdf[rankorderebv_columns].astype(float).round(2).astype(int)
-        rank_results.to_csv(rankorderebv, index=False, header=False, sep=' ')
-        print(f'Rankorder results written to {rankorderebv}')
-
-    print(rankorderdf.iloc[50000:50015])
-    print(rankorderdf.info())
-    print(rankorderdf)
+        seperateresults(rankorderdf,rankorderebv_columns,rankorderebv,'Rankorder')
 
     if phantomcollection == 1:
 
@@ -903,20 +893,14 @@ if (long_collect == 1):
         fig.suptitle(f'Meðal óskalað kynbótamat árganga {yearmonth}', fontsize=26, fontweight ="bold")
         plt.subplots_adjust(left=0.05, bottom=0.07, right=0.97, top=0.94, wspace=0.05, hspace=0.09)
 
-        fig.set_size_inches([10, 7])
+        fig.set_size_inches([12, 10])
         plt.savefig(f'../{yearmonth}/figures/unscaledlongevitymeanbybirthyear{yearmonth}.png')
 
         if pltshow == 1:
             plt.show()
 
     if seperate_files == 1:
-        print('Longgevity results written to seperate file')
-        long_results = longdf[longebv_columns].astype(float).round(2).astype(int)
-        long_results.to_csv(longebv, index=False, header=False, sep=' ')
-        print(f'Rankorder results written to {longebv}')
-
-    print(longdf.iloc[50000:50015])
-    print(longdf.info())
+        seperateresults(longdf,longebv_columns,longebv,'Longevity')
 
     if phantomcollection == 1:
 

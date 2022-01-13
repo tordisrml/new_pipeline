@@ -17,7 +17,7 @@ Kynbotamat TDM fituhlutfall
 $ANALYSE 12 2 0 0
 
 
-$DATA  ASCII (5,11,-98) ../../../dmu_data/tdm3.dat
+$DATA  ASCII (5,11,-98) ../../dmu_data/tdm3.dat
 
 $VARIABLE
 ID hy htd cac tdmonth
@@ -43,7 +43,7 @@ $MODEL
 2 3
 
 
-$VAR_STR 2 PED 6 RANDOM 1.0 ASCII ../../../dmu_data/dmu_ped.txt
+$VAR_STR 2 PED 6 RANDOM 1.0 ASCII ../../dmu_data/dmu_ped.txt
 
 
 $PRIOR fp.par

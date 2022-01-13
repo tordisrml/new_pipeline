@@ -17,7 +17,7 @@ Kynbotamat TDM mjolk
 
 $ANALYSE 12 2 0 0
 
-$DATA  ASCII (5,11,-98) ../../../dmu_data/tdm1.dat
+$DATA  ASCII (5,11,-98) ../../dmu_data/tdm1.dat
 
 $VARIABLE
 ID bu-ar htd cac tdmonth
@@ -42,7 +42,7 @@ $MODEL
 1 3
 2 3
 
-$VAR_STR 2 PED 6 RANDOM 1.0 ASCII ../../../dmu_data/dmu_ped.txt
+$VAR_STR 2 PED 6 RANDOM 1.0 ASCII ../../dmu_data/dmu_ped.txt
 
 $PRIOR my.par
 
