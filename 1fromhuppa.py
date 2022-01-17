@@ -21,19 +21,19 @@ from kynbotamat_module import plottingmean
 #Creating DMU trait files
 prepfordmu = 0
 
-preptdm = 1 #run preptdm.f program
+preptdm = 0 #run preptdm.f program
 
 #Create DMU datafiles for these traits
-fertilitydmu = 0
-confdmu = 0
-rankorderdmu = 0
-longdmu = 0
+fertilitydmu = 1
+confdmu = 1
+rankorderdmu = 1
+longdmu = 1
 
 #Plotting tdm1 datafile to check if OK
-plottdm = 0
+plottdm = 1
 
 #Compile and run accuracy fortran programs for yield
-accuracytdm = 0
+accuracytdm = 1
 #---------------------------------------------------------------------------
 #File with information for program!
 control = pd.read_csv(
@@ -133,7 +133,7 @@ if preptdm == 1 :
     newtdm = control.loc[17,'control']
     tdmfile = f'../{yearmonth}/dmu_data/tdm.csv'
 
-    # sortingped = f'sort +0.0 -0.15 {pedigreefile} -o {sortedped}'
+    sortingped = f'sort +0.0 -0.15 {pedigreefile} -o {sortedped}'
     combinetdm = f"cat {oldtdm} {newtdm} | awk -F',' '!a[$1$5$6$7$8$9$10$11]++' > {tdmfile}"
     subprocess.call(sortingped, shell=True)
     print('Sorting pedigree in shell done')
@@ -1054,7 +1054,7 @@ if accuracytdm == 1:
     subprocess.call(f'gfortran -o acc2 acctdm2.f', shell=True)
     subprocess.call(f'gfortran -o acc2fr acctdm2_fr.f', shell=True)
 
-    # subprocess.call('./acc1', shell=True)
+    subprocess.call('./acc1', shell=True)
     subprocess.call('./acc2', shell=True)
     subprocess.call('./acc2fr', shell=True)
 

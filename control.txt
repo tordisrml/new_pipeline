@@ -10,17 +10,17 @@
 2
 '/dmu_data/tdm.csv'
 '../from_huppa/radadurhuppu.ped'
-../from_huppa/Pgree_20210909.txt
+../from_huppa/Pgree_28262.txt
 2017
 100
 10
 ../tdmfile/tdmfromegill.csv
-../from_huppa/tdm20211203.csv
-../from_huppa/Kynbotfrjosemi2_27163.csv
-../from_huppa/Kynbotfrjosemi_27162.csv
-20210913
-../from_huppa/Skopulag_27562.txt
-../from_huppa/Mjaltaathugun_26464.txt
+../from_huppa/tdm20220117.csv
+../from_huppa/Kynbotfrjosemi2_28264.csv
+../from_huppa/Kynbotfrjosemi_28263.csv
+20220117
+../from_huppa/Skopulag_28265.txt
+../from_huppa/Mjaltaathugun_28266.txt
 
 1. Year and month of genetic evaluation
 2. Maximum number of records, records excluded in data reading not included.
