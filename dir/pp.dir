@@ -18,7 +18,7 @@ Kynbotamat TDM proteinhlutfall
 $ANALYSE 12 2 0 0
 
 
-$DATA  ASCII (5,11,-98) ../../dmu_data/tdm3.dat
+$DATA  ASCII (5,14,-98) ../../dmu_data/tdm3.dat
 
 
 $VARIABLE

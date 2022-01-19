@@ -17,7 +17,7 @@ Kynbotamat TDM fituhlutfall
 $ANALYSE 12 2 0 0
 
 
-$DATA  ASCII (5,11,-98) ../../dmu_data/tdm3.dat
+$DATA  ASCII (5,14,-98) ../../dmu_data/tdm3.dat
 
 $VARIABLE
 ID hy htd cac tdmonth
