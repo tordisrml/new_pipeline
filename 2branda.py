@@ -20,13 +20,13 @@ from kynbotamat_module import yieldcollect
 
 #Option to read SOL files and collect results, 0 means skip
 # and 1 means SOL files will be read
-yield_collect = 0
-plotyieldPE = 0
+yield_collect = 1
+plotyieldPE = 1
 
-fertility_collect = 0
-conf_collect = 0
-rankorder_collect = 0
-long_collect = 0
+fertility_collect = 1
+conf_collect = 1
+rankorder_collect = 1
+long_collect = 1
 
 #An option to collect phantom parent group results to seperate files.
 #Does not collect for yield only other traits. Should be 0 by defult
@@ -38,7 +38,7 @@ plotunscaled = 0
 
 #Option to write scaled results for above traits to seperate files to be read
 #later, 0 means skip and 1 means seperate result files will be written to disc
-seperate_files = 1
+seperate_files = 0
 
 #Option to collect results for a large datafile to be read by Huppa.
 #--IF ABOVE OPTIONS ARE SET TO 0 --> program will collect results from seperate files!
@@ -48,9 +48,9 @@ collectresults = 1    #0 means don't, 1 means collect
 #Option to write large datafile to disc. 1 by defult
 writebranda = 1 #(only when collectresults = 1 )
 #Option to write seperate excel file only with nautastöðvar bulls (only when writebranda = 1 )
-nautastod = 1
+nautastod = 0
 #Option to plot branda file
-plottingbranda = 1
+plottingbranda = 0
 
 #Option to show plots on computer screen. User must have launched x-ming
 # Should be 0 by default.
@@ -69,7 +69,7 @@ control = pd.read_csv(
 #Info for program
 #---------------------------------------------------------------------------
 yearmonth = control.loc[0,'control']
-brandafile = f'../{yearmonth}/dmu_data/branda{yearmonth}'
+brandafile = f'../{yearmonth}/results/branda{yearmonth}'
 #Scaling year, present year - 5 years
 scalingyear = pd.to_numeric(control.loc[13,'control'])
 #Scaling objects
@@ -945,7 +945,7 @@ if collectresults == 1:
     if (yield_collect == 0):
         results = combineresultscsv(results,yieldebv,yieldebv_columns)
     elif (yield_collect == 1):
-        results = combineresultsdf(results,yield_results,yieldebv_columns)
+        results = combineresultsdf(results,yielddf,yieldebv_columns)
 
     if (fertility_collect == 0):
         results = combineresultscsv(results,fertilityebv,fertilityebv_columns)
@@ -1054,15 +1054,64 @@ if collectresults == 1:
     print(results.info())
 #Scaled EBVs written to disc
     if writebranda == 1:
-        branda = results[brandafile_columns].fillna(0, downcast='infer').astype(int)  #76 columns
+        branda = results[brandafile_columns].fillna(0, downcast='infer').astype(int)
 
-        np.savetxt(brandafile, branda,
-        fmt='%15s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s')
+        # branda.to_csv(f'../{yearmonth}/results/branda{yearmonth}newformat', index=False, header=False, sep=';')
+
+
+        brandaold = branda[brandafile_columns].copy()
+        brandaold.loc[:,'bandmal_eldra'] = 0
+        brandaold.loc[:,'bolur_eldra'] = 0
+        brandaold.loc[:,'malir_eldra'] = 0
+        brandaold.loc[:,'fotstada_eldra'] = 0
+        brandaold.loc[:,'jugurlag_festa_eldra'] = 0
+        brandaold.loc[:,'spenalengd_lag_eldra'] = 0
+        brandaold.loc[:,'mjaltir_eldra'] = 0
+        brandaold.loc[:,'skap_eldra'] = 0
+        brandaold['skap2'] = brandaold['skap']
+        brandaold.loc[:,'eigin_afurdir'] = 0
+        brandaold.loc[:,'no_daughters_utlit_gamla'] = 0
+        brandaold.loc[:,'utlit_gamla_acc'] = 0
+        brandaold.loc[:,'utlit_nyja_acc'] = 0
+        brandaold.loc[:,'mjaltir_acc'] = 0
+
+        brandaold2 = brandaold[['id',                                                         #1
+            'my1','my2','my3','fy1','fy2','fy3','py1','py2','py3','fp1','fp2','fp3',    #12
+            'pp1','pp2','pp3','fer_lact1','fer_lact2','fer_lact3','scs1','scs2','scs3',  #9
+
+            'bandmal_eldra', 'bolur_eldra', 'malir_eldra','fotstada_eldra',
+            'jugurlag_festa_eldra', 'spenalengd_lag_eldra', 'mjaltir_eldra', 'skap_eldra', #8
+
+            'boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahalli', 'malabratti',
+            'stada_hh', 'stada_ha', 'klaufhalli', 'jugurfesta',
+            'jugurband', 'jugurdypt', 'spenalengd', 'spenathykkt', 'spenastada',
+            'mjaltir', 'skap','mjaltarod', 'gaedarod','L3','myt','fyt','pyt','fpt','ppt', #25
+            'eigin_afurdir','yieldtotal','fertility','scst','skrokkur','jugur','spenar','mjaltir_t',
+            'skap2','total', 'offyield', 'yield_acc', 'offscs', 'scs_acc',
+            'no_daughters_utlit_gamla','utlit_gamla_acc','offconf','utlit_nyja_acc',
+            'offrankorder','mjaltir_acc','offlong3','milkper', 'fatper', 'protper',
+            'CR0','ICF','IFL']]                                                                   #27    = 82 dálkur!!!
+
+
+
+        np.savetxt(f'../{yearmonth}/results/branda{yearmonth}oldformat', brandaold2,
+        fmt='%15s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
+%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
+%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
+%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s')
+
+
+
+
+
+#nýtt format en fixed width!
+#         np.savetxt(brandafile, branda,
+#         fmt='%15s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
+# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
+# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
+# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
+# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
+# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s')
 
         print(branda.iloc[500000:500015])
         print(branda.info())
