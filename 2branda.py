@@ -1056,62 +1056,8 @@ if collectresults == 1:
     if writebranda == 1:
         branda = results[brandafile_columns].fillna(0, downcast='infer').astype(int)
 
-        # branda.to_csv(f'../{yearmonth}/results/branda{yearmonth}newformat', index=False, header=False, sep=';')
+        branda.to_csv(f'../{yearmonth}/results/branda{yearmonth}newformat', index=False, header=False, sep=';')
 
-
-        brandaold = branda[brandafile_columns].copy()
-        brandaold.loc[:,'bandmal_eldra'] = 0
-        brandaold.loc[:,'bolur_eldra'] = 0
-        brandaold.loc[:,'malir_eldra'] = 0
-        brandaold.loc[:,'fotstada_eldra'] = 0
-        brandaold.loc[:,'jugurlag_festa_eldra'] = 0
-        brandaold.loc[:,'spenalengd_lag_eldra'] = 0
-        brandaold.loc[:,'mjaltir_eldra'] = 0
-        brandaold.loc[:,'skap_eldra'] = 0
-        brandaold['skap2'] = brandaold['skap']
-        brandaold.loc[:,'eigin_afurdir'] = 0
-        brandaold.loc[:,'no_daughters_utlit_gamla'] = 0
-        brandaold.loc[:,'utlit_gamla_acc'] = 0
-        brandaold.loc[:,'utlit_nyja_acc'] = 0
-        brandaold.loc[:,'mjaltir_acc'] = 0
-
-        brandaold2 = brandaold[['id',                                                         #1
-            'my1','my2','my3','fy1','fy2','fy3','py1','py2','py3','fp1','fp2','fp3',    #12
-            'pp1','pp2','pp3','fer_lact1','fer_lact2','fer_lact3','scs1','scs2','scs3',  #9
-
-            'bandmal_eldra', 'bolur_eldra', 'malir_eldra','fotstada_eldra',
-            'jugurlag_festa_eldra', 'spenalengd_lag_eldra', 'mjaltir_eldra', 'skap_eldra', #8
-
-            'boldypt', 'utlogur', 'yfirlina', 'malabreidd', 'malahalli', 'malabratti',
-            'stada_hh', 'stada_ha', 'klaufhalli', 'jugurfesta',
-            'jugurband', 'jugurdypt', 'spenalengd', 'spenathykkt', 'spenastada',
-            'mjaltir', 'skap','mjaltarod', 'gaedarod','L3','myt','fyt','pyt','fpt','ppt', #25
-            'eigin_afurdir','yieldtotal','fertility','scst','skrokkur','jugur','spenar','mjaltir_t',
-            'skap2','total', 'offyield', 'yield_acc', 'offscs', 'scs_acc',
-            'no_daughters_utlit_gamla','utlit_gamla_acc','offconf','utlit_nyja_acc',
-            'offrankorder','mjaltir_acc','offlong3','milkper', 'fatper', 'protper',
-            'CR0','ICF','IFL']]                                                                   #27    = 82 dálkur!!!
-
-
-
-        np.savetxt(f'../{yearmonth}/results/branda{yearmonth}oldformat', brandaold2,
-        fmt='%15s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-%3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s')
-
-
-
-
-
-#nýtt format en fixed width!
-#         np.savetxt(brandafile, branda,
-#         fmt='%15s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s \
-# %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s %3s')
 
         print(branda.iloc[500000:500015])
         print(branda.info())
